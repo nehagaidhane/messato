@@ -1,11 +1,10 @@
 import { useCart } from "../../components/usecart";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import "./Globalcartpopup.css";
 
 const Globalcartpopup = () => {
-  const { cart, setCartOpen } = useCart();
+  const { cart, setCartOpen, cartOpen } = useCart(); // ✅ added cartOpen
   const location = useLocation();
-  const navigate = useNavigate();
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -14,11 +13,12 @@ const Globalcartpopup = () => {
     0
   );
 
-  /* ✅ HIDE ON CART + PAYMENT PAGES */
-  const hideOnRoutes = ["/cart", "/payment"];
+  /* ✅ HIDE ON ROUTES */
+  const hideOnRoutes = ["/cart", "/payment", "/confirm-address"];
 
   const shouldHide =
     totalItems === 0 ||
+    cartOpen || // ✅ IMPORTANT FIX
     hideOnRoutes.some((route) =>
       location.pathname.startsWith(route)
     );
@@ -28,10 +28,7 @@ const Globalcartpopup = () => {
   return (
     <div
       className="global-cart-popup"
-      onClick={() => {
-        setCartOpen(true);
-        navigate("/cart");
-      }}
+      onClick={() => setCartOpen(true)}
     >
       <div className="cart-popup-left">
         <h4>

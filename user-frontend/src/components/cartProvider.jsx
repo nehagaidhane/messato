@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { CartContext } from "./CartContext";
-import GlobalCartPopup from "../pages/dashboard/Globalcartpopup";
+import CartDrawer from "./cartDrawer"; // ✅ import drawer here
 
 const CartProvider = ({ children }) => {
   const user =
@@ -39,7 +39,7 @@ const CartProvider = ({ children }) => {
       if (existing) {
         return prev.map((c) =>
           c.id === item.id
-            ? { ...c, quantity: c.quantity + 1 }
+            ? { ...c, quantity: c.quantity + (item.quantity || 1) }
             : c
         );
       }
@@ -48,14 +48,11 @@ const CartProvider = ({ children }) => {
         ...prev,
         {
           ...item,
-          quantity: 1,
+          quantity: item.quantity || 1,
           meal_time: item.meal_time,
         },
       ];
     });
-
-    // ❌ REMOVE AUTO OPEN
-    // setCartOpen(true);
   };
 
   /* ================= UPDATE QTY ================= */
@@ -96,8 +93,13 @@ const CartProvider = ({ children }) => {
         setCartOpen,
       }}
     >
-        <GlobalCartPopup />
       {children}
+
+      {/* ✅ CartDrawer lives here — controlled by cartOpen */}
+      <CartDrawer
+        open={cartOpen}
+        onClose={() => setCartOpen(false)}
+      />
     </CartContext.Provider>
   );
 };

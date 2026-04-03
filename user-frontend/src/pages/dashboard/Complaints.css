@@ -1,0 +1,83 @@
+.comp-container {
+  padding: 15px;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+.comp-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.comp-header button {
+  border: none;
+  background: #eee;
+  border-radius: 50%;
+  padding: 8px;
+}
+
+.comp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.icon {
+  width: 35px;
+  height: 35px;
+  background: #1e63d5;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.comp-text {
+  flex: 1;
+}
+
+.comp-text h5 {
+  margin: 0;
+}
+
+.comp-text p {
+  margin: 2px 0;
+  font-size: 13px;
+  color: gray;
+}
+
+.status {
+  font-size: 12px;
+}
+
+.status.submitted {
+  color: #1e63d5;
+}
+
+.status.in\ progress {
+  color: orange;
+}
+
+.status.resolved {
+  color: green;
+}
+
+.time {
+  font-size: 12px;
+  color: gray;
+}
+
+.new-btn {
+  position: fixed;
+  bottom: 20px;
+  left: 15px;
+  right: 15px;
+  padding: 12px;
+  background: #1e63d5;
+  color: white;
+  border: none;
+  border-radius: 10px;
+}

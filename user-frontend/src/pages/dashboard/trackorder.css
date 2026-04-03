@@ -1,0 +1,51 @@
+.track-container {
+  height: 100vh;
+  position: relative;
+}
+
+.top-bar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+}
+
+.map {
+  height: 100%;
+  background: url("https://maps.gstatic.com/tactile/basepage/pegman_sherlock.png");
+  background-size: cover;
+}
+
+.bottom-card {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  background: white;
+  border-radius: 20px 20px 0 0;
+  padding: 20px;
+  text-align: center;
+}
+
+.profile {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  margin-top: -50px;
+  border: 3px solid white;
+}
+
+.info {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 0;
+  font-size: 13px;
+}
+
+.call-btn {
+  width: 100%;
+  padding: 12px;
+  background: #1e63d5;
+  color: white;
+  border: none;
+  border-radius: 10px;
+}

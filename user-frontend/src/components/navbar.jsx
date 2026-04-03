@@ -40,6 +40,7 @@ const buildShortAddress = (raw) => {
 /* ─── Root ─── */
 const Navbar = () => {
   const { pathname } = useLocation();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const role = useMemo(() => getRole(), [pathname]);
   if (role === "vendor") return null;
   const user = (() => {
@@ -234,7 +235,7 @@ fetch(`http://localhost:5000/api/user/reverse-geocode?lat=${coords.latitude}&lng
         <div className="dnav-inner">
 
           {/* Logo */}
-          <div className="dnav-logo" onClick={() => navigate("/user-dashboard")}>
+          <div className="dnav-logo" onClick={() => navigate("/dashboard")}>
             Messato
           </div>
 
@@ -263,7 +264,7 @@ fetch(`http://localhost:5000/api/user/reverse-geocode?lat=${coords.latitude}&lng
             {/* Home */}
             <button
               className={`dnav-nav-btn ${activeTab === "home" ? "active" : ""}`}
-              onClick={() => navigate("/user-dashboard")}
+              onClick={() => navigate("/dashboard")}
             >
               {activeTab === "home" ? <HiHome /> : <HiOutlineHome />}
               <span>Home</span>
@@ -379,7 +380,7 @@ fetch(`http://localhost:5000/api/user/reverse-geocode?lat=${coords.latitude}&lng
       <nav className="mnav-tabbar">
         <button
           className={`mnav-tab ${activeTab === "home" ? "active" : ""}`}
-          onClick={() => navigate("/user-dashboard")}
+          onClick={() => navigate("/dashboard")}
         >
           {activeTab === "home"
             ? <HiHome className="mnav-tab-icon" />

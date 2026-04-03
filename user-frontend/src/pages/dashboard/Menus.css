@@ -1,0 +1,192 @@
+.menu-page {
+  padding: 16px;
+  background: #f5f6f8;
+  min-height: 100vh;
+}
+
+/* Header */
+.menu-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.menu-header button {
+  border: none;
+  background: #eee;
+  padding: 8px;
+  border-radius: 50%;
+}
+
+/* Banner */
+.menu-banner {
+  position: relative;
+  margin-top: 15px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.menu-banner img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.menu-overlay {
+  position: absolute;
+  bottom: 10px;
+  left: 15px;
+  color: white;
+}
+
+.badge {
+  background: blue;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.sub-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #2b6cff;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 12px;
+}
+
+/* Search */
+.menu-search-bar {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.menu-search-bar input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 12px;
+  border: none;
+}
+
+.menu-search-bar button {
+  padding: 10px;
+  border-radius: 12px;
+  border: none;
+  background: #2b6cff;
+  color: white;
+}
+
+/* Title */
+.menu-title {
+  margin: 10px 0;
+}
+
+/* Meal Cards */
+.meal-card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 15px;
+}
+
+.meal-card img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+
+.meal-overlay {
+  position: absolute;
+  bottom: 10px;
+  left: 15px;
+  color: white;
+}
+/* 🔥 Desktop Enhancement */
+@media (min-width: 768px) {
+ .menu-page {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;   /* ✅ NO TOP GAP */
+    padding: 20px 30px;
+  }
+
+  .menu-banner img {
+    height: 220px;
+  }
+
+  .menu-search-bar {
+    gap: 15px;
+  }
+
+  .menu-search-bar input {
+    padding: 14px;
+    font-size: 15px;
+  }
+
+  .menu-search-bar button {
+    padding: 14px;
+  }
+
+  .meal-card img {
+    height: 160px;
+  }
+
+  .menu-title {
+    font-size: 20px;
+    margin-top: 20px;
+  }
+}
+
+/* 🔥 Large screens */
+@media (min-width: 1200px) {
+  .menu-page {
+    max-width: 1400px;
+    padding: 20px 60px;
+  }
+
+  .meal-card {
+    display: flex;
+    height: 180px;
+  }
+
+  .meal-card img {
+    width: 40%;
+    height: 100%;
+  }
+
+  .meal-overlay {
+    position: static;
+    padding: 20px;
+    color: black;
+  }
+}
+.menu-search-bar button.active {
+  background: #2b6cff;
+  color: white;
+}
+
+.order-btn {
+  margin-top: 8px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  background: green;
+  color: white;
+  cursor: pointer;
+}
+/* Chrome */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}

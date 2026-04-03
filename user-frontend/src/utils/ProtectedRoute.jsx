@@ -2,11 +2,11 @@ import { Navigate } from "react-router-dom";
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("accessToken");
-  const role = localStorage.getItem("role");
+const type = localStorage.getItem("type");
 
   if (!token) return <Navigate to="/" />;
 
-  if (role !== "user") {
+  if (type !== "user") {
     alert("Access denied");
     return <Navigate to="/" />;
   }

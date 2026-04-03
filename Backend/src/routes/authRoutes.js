@@ -4,48 +4,41 @@ const router = express.Router();
 const {
   signupUser,
   signupVendor,
-  login,
-  refreshToken
+  userLogin,
+  vendorLogin,
+  refreshToken,
+  googleLogin,
+  facebookLogin,
+  appleLogin,
+  forgotPassword,
+  resetPassword,
 } = require("../controllers/authController");
-const jwt = require("jsonwebtoken");
 
 const { verifyToken, isVendor, isUser } = require("../middleware/authMiddleware");
-console.log("verifyToken:", verifyToken);
-console.log("isVendor:", isVendor);
-console.log("isUser:", isUser);
-// ================= AUTH ROUTES =================
 
-// User signup
-router.post("/signup-user", signupUser);
-
-// Vendor signup
+// ── Signup ──────────────────────────────────────────────────
+router.post("/signup-user",   signupUser);
 router.post("/signup-vendor", signupVendor);
 
-// Login (common for both)
-router.post("/login", login);
+// ── Email / Password Login ───────────────────────────────────
+router.post("/user/login",   userLogin);    // supports rememberMe in body
+router.post("/vendor/login", vendorLogin);
 
-// Refresh access token
+// ── Social Login ─────────────────────────────────────────────
+router.post("/google-login",   googleLogin);
+router.post("/facebook-login", facebookLogin);
+router.post("/apple-login",    appleLogin);
+
+// ── Password Reset ───────────────────────────────────────────
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password",  resetPassword);
+
+// ── Token Refresh ────────────────────────────────────────────
 router.get("/refresh", refreshToken);
 
-
-// ================= TEST PROTECTED ROUTES =================
-// (optional for testing middleware)
-
-
-
-// Only logged-in users
-router.get("/protected", verifyToken, (req, res) => {
-  res.json({ message: "Protected route accessed", user: req.user });
-});
-
-// Only vendor
-router.get("/vendor-only", verifyToken, isVendor, (req, res) => {
-  res.json({ message: "Welcome Vendor" });
-});
-
-// Only user
-router.get("/user-only", verifyToken, isUser, (req, res) => {
-  res.json({ message: "Welcome User" });
-});
+// ── Protected test routes ────────────────────────────────────
+router.get("/protected",   verifyToken,           (req, res) => res.json({ message: "Protected route accessed", user: req.user }));
+router.get("/vendor-only", verifyToken, isVendor, (req, res) => res.json({ message: "Welcome Vendor" }));
+router.get("/user-only",   verifyToken, isUser,   (req, res) => res.json({ message: "Welcome User" }));
 
 module.exports = router;

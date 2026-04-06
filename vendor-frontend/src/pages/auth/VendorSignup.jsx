@@ -234,7 +234,7 @@ function SignupForm() {
       {/* Bottom link */}
       <p className="vs-bottom-text">
         Already have an account?{" "}
-        <button type="button" className="vs-link" onClick={() => navigate("/")}>
+        <button type="button" className="vs-link" onClick={() => navigate("/login")}>
           LOG IN
         </button>
       </p>

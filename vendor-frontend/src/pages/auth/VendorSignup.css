@@ -1,0 +1,457 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+/* ── Reset & Variables ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue:        #2979ff;
+  --blue-dark:   #1565c0;
+  --blue-soft:   #f0f4ff;
+  --text-dark:   #1a1a2e;
+  --text-muted:  #888;
+  --input-bg:    #f0f4ff;
+  --placeholder: #aab4cc;
+  --font-serif:  'Playfair Display', serif;
+  --font-sans:   'DM Sans', sans-serif;
+}
+
+html, body, #root { height: 100%; }
+
+/* ════════════════════════════════════════════════════════
+   MOBILE  ≤ 899px
+   Full-screen white page, no card wrapper, no scroll
+════════════════════════════════════════════════════════ */
+.vs-page {
+  min-height: 100vh;
+  min-height: 100dvh;          /* dynamic viewport on iOS */
+  width: 100%;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-sans);
+  overflow: hidden;
+}
+
+.vs-split {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+}
+
+/* Desktop brand panel hidden on mobile */
+.vs-desktop-panel { display: none !important; }
+
+/* Form panel fills the whole screen on mobile */
+.vs-form-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* The <form> itself — no card shadow, just padding */
+.vs-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 48px 28px 36px;
+  background: #fff;
+  position: relative;
+  flex: 1;
+}
+
+/* ── Back button ─── */
+.vs-back-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--blue-soft);
+  border: none;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 1;
+  transition: background .2s;
+  z-index: 10;
+}
+.vs-back-btn:hover { background: #dce8ff; }
+
+/* ── Mobile logo ── */
+.vl-logo-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+.vl-logo-img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
+
+/* ── Desktop form header — ALWAYS hidden on mobile ── */
+.vs-desktop-form-header { display: none; }
+
+/* ── Mobile title / subtitle ── */
+.vs-title {
+  display: block;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 6px 0 4px;
+}
+.vs-subtitle {
+  display: block;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+/* ── Labels ── */
+.vs-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+/* ── Inputs ── */
+.vs-input {
+  width: 100%;
+  padding: 14px 15px;
+  border-radius: 10px;
+  border: none;
+  background: var(--input-bg);
+  font-size: 14px;
+  color: var(--text-dark);
+  font-family: var(--font-sans);
+  outline: none;
+  margin-bottom: 16px;
+  transition: box-shadow .2s;
+}
+.vs-input:focus        { box-shadow: 0 0 0 2.5px #2979ff55; }
+.vs-input::placeholder { color: var(--placeholder); }
+
+/* ── Password fields (stacked on mobile) ── */
+.vs-pass-row { display: flex; flex-direction: column; }
+.vs-pass-col { display: flex; flex-direction: column; }
+
+.vs-pass-wrap { position: relative; margin-bottom: 16px; }
+.vs-pass-wrap .vs-input { margin-bottom: 0; padding-right: 44px; }
+.vs-eye-btn {
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 17px;
+  padding: 0;
+  line-height: 1;
+  color: #888;
+}
+
+/* ── Submit button ── */
+.vs-btn {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+  cursor: pointer;
+  margin-top: 8px;
+  box-shadow: 0 5px 18px rgba(41,121,255,.38);
+  font-family: var(--font-sans);
+  transition: opacity .2s;
+}
+.vs-btn:hover:not(:disabled) { opacity: .91; }
+.vs-btn:disabled { opacity: .65; cursor: not-allowed; }
+
+/* ── Bottom link ── */
+.vs-bottom-text {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 18px;
+}
+.vs-link {
+  color: var(--blue);
+  font-weight: 700;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+/* ── Messages ── */
+.vs-msg { font-size: 13px; text-align: center; margin: 4px 0 10px; border-radius: 8px; padding: 8px 12px; }
+.vs-msg.error   { color: #e53935; background: #fff5f5; }
+.vs-msg.success { color: #27ae60; background: #f0fff4; }
+
+
+/* ════════════════════════════════════════════════════════
+   DESKTOP  ≥ 900px
+   Fixed split — NO scrollbar anywhere
+════════════════════════════════════════════════════════ */
+@media (min-width: 900px) {
+
+  /* Lock the whole page to viewport height — zero overflow */
+  html, body, #root { overflow: hidden; height: 100%; }
+
+  .vs-page {
+    overflow: hidden;
+    height: 100vh;
+    min-height: unset;
+    flex-direction: row;
+  }
+
+  .vs-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 100vh;
+    overflow: hidden;
+    flex-direction: unset;
+  }
+
+  /* ── LEFT BRAND PANEL ───────────────────────────────── */
+  .vs-desktop-panel {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+    padding: 56px 52px;
+    background: linear-gradient(155deg, #0f1f52 0%, #1a3080 48%, #1f55c0 100%);
+    position: relative;
+    color: #fff;
+  }
+
+  /* Decorative SVG rings */
+  .vs-desktop-panel::before,
+  .vs-desktop-panel::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .vs-desktop-panel::before {
+    width: 480px; height: 480px;
+    border: 1.5px solid rgba(255,255,255,.07);
+    top: -160px; right: -140px;
+  }
+  .vs-desktop-panel::after {
+    width: 320px; height: 320px;
+    border: 1px solid rgba(255,255,255,.05);
+    bottom: -100px; left: -60px;
+  }
+
+  /* Extra graphic ring (pseudo doesn't support two ::after, so we use a child) */
+  .dp-ring-extra {
+    position: absolute;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.04);
+    top: 50%; left: -60px;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  /* Brand row */
+  .dp-logo-wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 44px;
+    position: relative;
+    z-index: 1;
+  }
+  .dp-logo-img {
+    width: 52px; height: 52px;
+    object-fit: contain;
+    background: #fff;
+    border-radius: 13px;
+    padding: 6px;
+  }
+  .dp-brand-name {
+    font-family: var(--font-serif);
+    font-size: 26px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  /* Tagline */
+  .dp-tagline {
+    font-family: var(--font-serif);
+    font-size: 38px;
+    font-weight: 800;
+    line-height: 1.18;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+  }
+  .dp-tagline span { color: #82b8ff; }
+
+  /* Description */
+  .dp-desc {
+    font-size: 14.5px;
+    line-height: 1.75;
+    color: rgba(255,255,255,.68);
+    max-width: 370px;
+    margin-bottom: 36px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Features */
+  .dp-features { display: flex; flex-direction: column; gap: 15px; position: relative; z-index: 1; }
+  .dp-feature  { display: flex; align-items: flex-start; gap: 13px; }
+  .dp-feature-icon {
+    width: 42px; height: 42px;
+    border-radius: 11px;
+    background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.13);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px; flex-shrink: 0;
+  }
+  .dp-feature-text strong { display: block; font-size: 13.5px; font-weight: 600; color: #fff; margin-bottom: 2px; }
+  .dp-feature-text span   { font-size: 12.5px; color: rgba(255,255,255,.56); line-height: 1.4; }
+
+  /* Stats */
+  .dp-stats {
+    display: flex; gap: 32px;
+    margin-top: 36px; padding-top: 22px;
+    border-top: 1px solid rgba(255,255,255,.11);
+    position: relative; z-index: 1;
+  }
+  .dp-stat strong { display: block; font-family: var(--font-serif); font-size: 22px; font-weight: 700; color: #fff; }
+  .dp-stat span   { font-size: 10px; color: rgba(255,255,255,.48); letter-spacing: .6px; text-transform: uppercase; }
+
+  /* Graphic accent pill at bottom of panel */
+  .dp-accent-bar {
+    position: absolute;
+    bottom: 48px; left: 52px;
+    display: flex; gap: 8px; align-items: center;
+    z-index: 1;
+  }
+  .dp-accent-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.35);
+  }
+  .dp-accent-dot.active { background: #82b8ff; width: 24px; border-radius: 4px; }
+  .dp-accent-dot:last-child { background: rgba(255,255,255,.20); }
+
+  /* ── RIGHT FORM PANEL ───────────────────────────────── */
+  .vs-form-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;       /* NO scrollbar */
+    padding: 0 64px;
+    background: #fff;
+  }
+
+  .vs-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    position: static;       /* back btn flows in normal doc flow */
+    flex: unset;
+    overflow: visible;
+  }
+
+  /* ── Back button on desktop: normal flow, above heading ── */
+  .vs-back-btn {
+    position: static;
+    display: inline-flex;
+    width: 36px; height: 36px;
+    font-size: 20px;
+    margin-bottom: 24px;
+    top: auto; left: auto;
+  }
+
+  /* Desktop form header — SHOW */
+  .vs-desktop-form-header {
+    display: block;
+    margin-bottom: 28px;
+  }
+  .vs-desktop-form-header h2 {
+    font-family: var(--font-serif);
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 5px;
+  }
+  .vs-desktop-form-header p {
+    font-size: 13.5px;
+    color: var(--text-muted);
+  }
+
+  /* HIDE mobile-only elements */
+  .vl-logo-wrap { display: none !important; }
+  .vs-title     { display: none !important; }
+  .vs-subtitle  { display: none !important; }
+
+  /* Input style on desktop */
+  .vs-input {
+    background: #f7f9ff;
+    border: 1.5px solid #e4eaf8;
+    border-radius: 9px;
+    padding: 13px 15px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .vs-input:focus {
+    border-color: var(--blue);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(41,121,255,.09);
+  }
+
+  /* Two-column passwords */
+  .vs-pass-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .vs-pass-wrap { margin-bottom: 16px; }
+
+  /* Button */
+  .vs-btn {
+    border-radius: 9px;
+    padding: 14px;
+    font-size: 14px;
+    letter-spacing: 1.4px;
+    margin-top: 4px;
+  }
+}
+
+/* Fine-tune for large monitors */
+@media (min-width: 1280px) {
+  .vs-desktop-panel { padding: 72px 64px; }
+  .dp-tagline       { font-size: 44px; }
+}

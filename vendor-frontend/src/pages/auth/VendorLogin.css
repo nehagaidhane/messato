@@ -1,0 +1,402 @@
+/* ── Page wrapper ── */
+.vl-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Segoe UI', sans-serif;
+  background: #0a0e1a;
+  position: relative;
+  overflow: hidden;
+}
+/* Desktop — logo inside card (right panel) */
+.vl-logo-img {
+  height: 80px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Mobile — logo larger to match your Figma 292×268 proportions */
+@media (max-width: 480px) {
+  .vl-logo-img {
+    height: 110px;   /* matches your original Figma size */
+    width: auto;
+    object-fit: contain;
+  }
+
+  .vl-logo-wrap {
+    margin-bottom: 10px;
+  }
+}
+/* ── Deep space background layers ── */
+.vl-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 60% at 15% 25%, rgba(29, 58, 110, 0.85) 0%, transparent 70%),
+    radial-gradient(ellipse 55% 55% at 85% 75%, rgba(45, 27, 105, 0.75) 0%, transparent 70%),
+    radial-gradient(ellipse 45% 45% at 65% 8%,  rgba(13, 59, 94, 0.6)  0%, transparent 70%);
+  animation: bgPulse 12s ease-in-out infinite alternate;
+}
+
+@keyframes bgPulse {
+  0%   { opacity: 0.85; }
+  100% { opacity: 1; }
+}
+
+/* ── Floating geometric shapes (pure CSS, no extra HTML) ── */
+.vl-page::after {
+  content: '';
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border: 1px solid rgba(61, 106, 224, 0.18);
+  border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+  top: -60px;
+  right: -60px;
+  animation: morphFloat 14s ease-in-out infinite alternate;
+}
+
+@keyframes morphFloat {
+  0%   { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(0deg) scale(1); }
+  50%  { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: rotate(12deg) scale(1.05); }
+  100% { border-radius: 30% 70% 50% 50% / 50% 60% 40% 60%; transform: rotate(-8deg) scale(0.95); }
+}
+
+/* ── Card ── */
+.vl-card {
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 24px;
+  padding: 36px 32px 28px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 0 60px rgba(41, 121, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-sizing: border-box;
+  z-index: 1;
+}
+
+/* ── VENDOR badge on card ── */
+.vl-card::before {
+  content: 'VENDOR PORTAL';
+  position: absolute;
+  top: -12px;
+  right: 20px;
+  background: linear-gradient(135deg, #2979ff, #7c4de8);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+/* ── Powered by tag under card ── */
+.vl-card::after {
+  content: 'POWERED BY MESSATO PLATFORM';
+  position: absolute;
+  bottom: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 2px;
+  white-space: nowrap;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* ── Logo ── */
+.vl-logo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.vl-logo-img {
+  height: 80px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* ── Headings ── */
+.vl-title {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 4px 0 3px;
+}
+
+.vl-subtitle {
+  text-align: center;
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+/* ── Form fields ── */
+.vl-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #444;
+  letter-spacing: 1px;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.vl-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: none;
+  background: #f0f4ff;
+  font-size: 13px;
+  color: #1a1a2e;
+  outline: none;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: box-shadow 0.2s;
+}
+
+.vl-input:focus {
+  box-shadow: 0 0 0 2px rgba(41, 121, 255, 0.3);
+}
+
+.vl-input::placeholder { color: #aab4cc; }
+
+/* ── Password wrapper ── */
+.vl-pass-wrap {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.vl-pass-wrap .vl-input {
+  margin-bottom: 0;
+  padding-right: 44px;
+}
+
+.vl-eye-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  padding: 0;
+  line-height: 1;
+}
+
+/* ── Remember me row ── */
+.vl-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: #555;
+}
+
+.vl-remember-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 6px;
+}
+
+.vl-remember-label input[type='checkbox'] {
+  accent-color: #2979ff;
+}
+
+.vl-forgot-btn {
+  background: none;
+  border: none;
+  color: #1a1a2e;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ── Primary button ── */
+.vl-primary-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #2979ff, #1565c0);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(41, 121, 255, 0.45);
+  transition: opacity 0.2s, transform 0.15s;
+  font-family: inherit;
+}
+
+.vl-primary-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+.vl-primary-btn:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
+
+/* ── Bottom / signup ── */
+.vl-bottom-text {
+  text-align: center;
+  font-size: 12px;
+  color: #555;
+  margin: 10px 0 3px;
+}
+
+.vl-signup-link {
+  background: none;
+  border: none;
+  color: #2979ff;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ── Or divider ── */
+.vl-or {
+  text-align: center;
+  font-size: 12px;
+  color: #aaa;
+  margin: 6px 0;
+}
+
+/* ── Social buttons ── */
+.vl-social-row {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 2px;
+}
+
+.vl-social-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: #f0f4ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+
+.vl-social-btn:hover {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
+
+/* ── OTP ── */
+.vl-otp-row { display: flex; gap: 14px; margin-bottom: 28px; }
+
+.vl-otp-input {
+  height: 58px;
+  border-radius: 12px;
+  border: none;
+  background: #f0f4ff;
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  color: #1a1a2e;
+  outline: none;
+  box-shadow: 0 2px 8px rgba(41,121,255,0.10);
+  font-family: inherit;
+  flex: 1;
+}
+
+.vl-otp-input:focus { box-shadow: 0 0 0 2px rgba(41,121,255,0.3); }
+
+/* ── Resend ── */
+.vl-resend-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.vl-resend-btn { background: none; border: none; font-size: 12px; font-family: inherit; cursor: pointer; }
+.vl-resend-btn.active  { color: #2979ff; }
+.vl-resend-btn.inactive { color: #888; cursor: default; }
+
+/* ── Error ── */
+.vl-error {
+  color: #e53935;
+  font-size: 12px;
+  text-align: center;
+  margin-bottom: 10px;
+  background: #fff5f5;
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+/* ── Back button ── */
+.vl-back-btn {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  background: #f0f4ff;
+  border: none;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1a1a2e;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.vl-back-btn:hover { background: #e0e8ff; }
+.vl-label-mt { margin-top: 14px; }
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RESPONSIVE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .vl-card { max-width: 400px; }
+  .vl-logo-img { height: 75px; }
+}
+
+@media (max-width: 480px) {
+  .vl-page {
+    align-items: flex-start;
+    background: #fff;
+  }
+  .vl-page::before,
+  .vl-page::after { display: none; }
+  .vl-card {
+    min-height: 100vh;
+    max-width: 100%;
+    border-radius: 0;
+    padding: 48px 24px 32px;
+    box-shadow: none;
+  }
+  .vl-card::before { display: none; }
+  .vl-card::after  { display: none; }
+  .vl-logo-img { height: 70px; }
+  .vl-title { font-size: 26px; }
+  .vl-input { padding: 15px 14px; font-size: 16px; border-radius: 12px; }
+  .vl-primary-btn { padding: 16px; font-size: 15px; border-radius: 14px; }
+  .vl-social-btn { width: 50px; height: 50px; }
+  .vl-otp-input { height: 64px; font-size: 24px; }
+  .vl-back-btn { top: 20px; left: 16px; width: 38px; height: 38px; }
+}
+
+@media (min-width: 1200px) {
+  .vl-card { max-width: 400px; padding: 40px 36px 32px; }
+  .vl-logo-img { height: 85px; }
+}

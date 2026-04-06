@@ -1,0 +1,303 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --blue:      #2979ff;
+  --blue-dark: #1565c0;
+  --blue-glow: rgba(41, 121, 255, 0.25);
+  --text:      #111827;
+  --muted:     #6b7280;
+  --border:    #e5e7eb;
+  --bg-field:  #f9fafb;
+  --font:      'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ══════════════════════════════════════
+   ROOT & SHELL
+══════════════════════════════════════ */
+.sp-root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f2f5;
+  padding: 24px 16px;
+  font-family: var(--font);
+}
+
+.sp-shell {
+  width: 100%;
+  max-width: 390px;
+  border-radius: 36px;
+  overflow: hidden;
+  box-shadow: 0 28px 72px rgba(0,0,0,.18), 0 6px 20px rgba(0,0,0,.10);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  animation: sp-rise .5s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+@keyframes sp-rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ══════════════════════════════════════
+   HERO
+══════════════════════════════════════ */
+.sp-hero {
+  position: relative;
+  height: 200px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sp-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(.5);
+}
+
+.sp-hero-fallback {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+}
+
+.sp-hero-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-align: center;
+  padding: 0 24px;
+}
+
+.sp-hero-overlay h1 {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: .3px;
+}
+
+.sp-hero-overlay p {
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: .82;
+}
+
+/* ══════════════════════════════════════
+   CARD
+══════════════════════════════════════ */
+.sp-card {
+  background: #fff;
+  border-radius: 28px 28px 0 0;
+  margin-top: -20px;
+  padding: 26px 22px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+/* ══════════════════════════════════════
+   FORM FIELDS
+══════════════════════════════════════ */
+.sp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sp-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.sp-input-wrap {
+  position: relative;
+}
+
+.sp-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg-field);
+  outline: none;
+  transition: border-color .2s, box-shadow .2s, background .2s;
+}
+
+.sp-input::placeholder {
+  color: #c0c4cd;
+}
+
+.sp-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-glow);
+  background: #fff;
+}
+
+.sp-eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  transition: color .15s;
+}
+
+.sp-eye:hover {
+  color: #6b7280;
+}
+
+/* ══════════════════════════════════════
+   PRIMARY BUTTON
+══════════════════════════════════════ */
+.sp-btn-primary {
+  width: 100%;
+  padding: 13px;
+  border-radius: 12px;
+  border: none;
+  background: var(--blue);
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 800;
+  font-family: var(--font);
+  letter-spacing: .6px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px var(--blue-glow);
+  transition: background .2s, transform .1s, box-shadow .2s;
+  margin-top: 4px;
+}
+
+.sp-btn-primary:hover:not(:disabled) {
+  background: var(--blue-dark);
+  box-shadow: 0 6px 22px rgba(41,121,255,.4);
+}
+
+.sp-btn-primary:active:not(:disabled) {
+  transform: scale(.98);
+}
+
+.sp-btn-primary:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+/* ══════════════════════════════════════
+   LOGIN LINK
+══════════════════════════════════════ */
+.sp-login {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.sp-login a {
+  color: var(--blue);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.sp-login a:hover {
+  text-decoration: underline;
+}
+
+/* ══════════════════════════════════════
+   SPINNER
+══════════════════════════════════════ */
+@keyframes sp-spin {
+  to { transform: rotate(360deg); }
+}
+
+.sp-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: sp-spin .7s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+/* ══════════════════════════════════════
+   DESKTOP  ≥ 768px  —  side-by-side
+══════════════════════════════════════ */
+@media (min-width: 768px) {
+  .sp-root {
+    background: linear-gradient(135deg, #e8edf5 0%, #d6e4f7 100%);
+    padding: 40px 24px;
+  }
+
+  .sp-shell {
+    max-width: 860px;
+    width: 100%;
+    flex-direction: row;
+    border-radius: 28px;
+    min-height: 580px;
+    box-shadow: 0 32px 80px rgba(0,0,0,.16), 0 8px 28px rgba(0,0,0,.10);
+  }
+
+  .sp-hero {
+    flex: 1;
+    height: auto;
+    min-height: 580px;
+    border-radius: 0;
+  }
+
+  .sp-hero-img {
+    filter: brightness(.45);
+  }
+
+  .sp-hero-overlay h1 {
+    font-size: 36px;
+  }
+
+  .sp-hero-overlay p {
+    font-size: 15px;
+    margin-top: 10px;
+  }
+
+  .sp-card {
+    width: 380px;
+    flex-shrink: 0;
+    border-radius: 0;
+    margin-top: 0;
+    padding: 44px 36px;
+    justify-content: center;
+    gap: 15px;
+    overflow-y: auto;
+  }
+
+  .sp-input {
+    padding: 13px 16px;
+    font-size: 14.5px;
+  }
+
+  .sp-btn-primary {
+    padding: 14px;
+    font-size: 15px;
+  }
+}

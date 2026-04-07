@@ -9,6 +9,7 @@ import { Users, ShoppingCart, Store, DollarSign } from "lucide-react";
 
 export default function Dashboard() {
   return (
+    //admin panel dashboard layout with sidebar, header, stats cards, charts and table
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900 overflow-hidden">
 
       <Sidebar />

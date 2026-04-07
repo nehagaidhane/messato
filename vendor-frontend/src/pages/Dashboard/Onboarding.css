@@ -1,0 +1,147 @@
+/* ================= CONTAINER ================= */
+.onboarding-container {
+  min-height: 100vh;
+  width: 100%;
+  background: #f7f9fc;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  padding: 20px;
+}
+
+/* ================= BACKGROUND CIRCLES ================= */
+.circle {
+  position: absolute;
+  border-radius: 50%;
+  background: #dbe6f5;
+  z-index: 0;
+}
+
+/* Left Circle */
+.circle.left {
+  width: 550px;
+  height: 480px;
+  top: -120px;
+  left: -200px;
+}
+
+/* Right Circle */
+.circle.right {
+  width: 600px;
+  height: 600px;
+  bottom: -250px;
+  right: -250px;
+}
+
+/* ================= SLIDE FIX ================= */
+.slide {
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Bigger Image */
+.slide-img {
+  margin-top: 0px;
+  width: 350px;
+  max-width: 95%;
+  margin-bottom: 0px;
+}
+
+/* Text */
+.slide-text {
+  font-size: 22px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+  max-width: 300px;
+  line-height: 1.5;
+  margin-top: 0px;
+}
+
+/* ================= DOTS ================= */
+.dots {
+  margin: 20px 0;
+  z-index: 2;
+}
+
+.dot {
+  height: 8px;
+  width: 8px;
+  margin: 0 5px;
+  background-color: #e0bca8;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot.active {
+  background-color: #2d6cdf;
+}
+
+/* ================= BUTTON ================= */
+.next-btn {
+  width: 100%;
+  max-width: 320px;
+  padding: 14px;
+  background: #2d6cdf;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.skip {
+  margin-top: 10px;
+  color: #888;
+  font-size: 14px;
+  z-index: 2;
+}
+
+/* ================= RESPONSIVE ================= */
+
+/* Tablet */
+@media (max-width: 768px) {
+  .slide-img {
+    width: 240px;
+  }
+
+  .circle.left {
+    width: 300px;
+    height: 300px;
+    left: -120px;
+  }
+
+  .circle.right {
+    width: 280px;
+    height: 280px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .slide-img {
+    width: 200px;
+  }
+
+  .slide-text {
+    font-size: 15px;
+  }
+
+  .circle.left {
+    width: 250px;
+    height: 250px;
+    left: -100px;
+  }
+
+  .circle.right {
+    width: 200px;
+    height: 200px;
+    right: -100px;
+  }
+}

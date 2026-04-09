@@ -1,24 +1,60 @@
 import { useState } from "react";
-import { Mail, Lock, Shield } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
     email: "",
     password: "",
-    role: "admin",
   });
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  // ================= LOGIN =================
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("Login Data:", form);
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+        credentials: "include", // for refresh token cookie
+      });
 
-    // 👉 later connect backend here
-    // if success → redirect based on role
+      const data = await res.json();
+
+console.log("LOGIN RESPONSE:", data); // 🔥 ADD THIS
+
+if (!res.ok) {
+  alert(data.message || "Login failed");
+  return;
+}
+
+      // ✅ Store token
+      localStorage.setItem("token", data.accessToken);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      // ✅ Redirect based on role
+      if (data.role === "superadmin") {
+        navigate("/admin-role");
+      } else if (data.role === "admin") {
+        navigate("/");
+      } else if (data.role === "support") {
+        navigate("/support");
+      } else {
+        navigate("/");
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert("Server error");
+    }
   };
 
   return (
@@ -28,12 +64,12 @@ export default function Login() {
 
         {/* LOGO */}
         <div className="flex justify-center mb-6">
-          <img src="/logo.png" className="h-18" />
+          <img src="/logo.png" className="h-14" />
         </div>
 
         {/* TITLE */}
         <h2 className="text-2xl font-semibold text-center mb-6 text-black dark:text-white">
-          Login
+          Admin Login
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -48,6 +84,7 @@ export default function Login() {
               value={form.email}
               onChange={handleChange}
               className="w-full bg-transparent outline-none text-sm text-black dark:text-white"
+              required
             />
           </div>
 
@@ -61,6 +98,7 @@ export default function Login() {
               value={form.password}
               onChange={handleChange}
               className="w-full bg-transparent outline-none text-sm text-black dark:text-white"
+              required
             />
           </div>
 

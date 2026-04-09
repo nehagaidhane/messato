@@ -4,25 +4,32 @@ const db = require("../config/db"); // make sure this exists
 
 exports.saveUserLocation = async (req, res) => {
   try {
-    const { latitude, longitude, address, city, state, zip, town } = req.body;
+    console.log("BODY:", req.body);
+    console.log("USER:", req.user); // 👈 IMPORTANT
+
     const userId = req.user.id;
 
-    if (!latitude || !longitude) {
-      return res.status(400).json({ message: "Latitude and longitude are required" });
-    }
-
     await db.query(
-      `UPDATE users
+      `UPDATE users 
        SET latitude=?, longitude=?, address=?, city=?, state=?, zip=?, town=?
        WHERE id=?`,
-      [latitude, longitude, address || "", city || "", state || "", zip || "", town || "", userId]
+      [
+        req.body.latitude,
+        req.body.longitude,
+        req.body.address,
+        req.body.city,
+        req.body.state,
+        req.body.zip,
+        req.body.town,
+        userId
+      ]
     );
 
-    res.json({ message: "Location saved successfully" });
+    res.json({ message: "Location saved" });
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Error saving location" });
   }
 };
 

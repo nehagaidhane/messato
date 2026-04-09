@@ -1,14 +1,22 @@
 import { Navigate } from "react-router-dom";
 
-const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem("accessToken");
-const type = localStorage.getItem("type");
+const ProtectedRoute = ({ children, role = "user" }) => {
+  const token =
+    localStorage.getItem("accessToken") ||
+    sessionStorage.getItem("accessToken");
 
-  if (!token) return <Navigate to="/" />;
+  const type =
+    localStorage.getItem("type") ||
+    sessionStorage.getItem("type");
 
-  if (type !== "user") {
-    alert("Access denied");
-    return <Navigate to="/" />;
+  // ❌ Not logged in
+  if (!token) {
+    return <Navigate to="/" replace />;
+  }
+
+  // ❌ Wrong role (vendor/admin trying user route)
+  if (role && type !== role) {
+    return <Navigate to="/" replace />;
   }
 
   return children;

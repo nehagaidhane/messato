@@ -6,6 +6,12 @@ const cors = require("cors");
 
 const { connectDB } = require("./src/config/db");
 
+// nbn nbnb nb
+const vendorRoutes = require("./src/routes/vendorRoutes");
+
+
+// mnbmnbmnb
+
 const app = express();
 const cookieParser = require("cookie-parser");
 app.use(cookieParser());
@@ -24,6 +30,7 @@ app.use(express.json());
 app.use("/api/upload", require("./src/routes/uploadRoutes"));
 app.use("/api/auth",require("./src/routes/authRoutes"));
 app.use("/api/user",require("./src/routes/userRoutes"));
+app.use("/api/vendor", vendorRoutes);
 // =========================
 // 🔹 DB Connection
 // =========================

@@ -1,0 +1,737 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* ── RESET ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  overflow-x: hidden !important;
+  width: 100%;
+}
+
+/* ── VARIABLES ── */
+:root {
+  --blue-primary: #1565C0;
+  --blue-mid:     #2196F3;
+  --blue-light:   #64B5F6;
+  --blue-pale:    #E3F2FD;
+  --blue-deco:    #BBDEFB;
+  --card-border:  #D6E9FB;
+  --page-bg:      #F5F9FF;
+  --input-bg:     #fff;
+  --input-border: #D0E4F5;
+  --input-active: #2196F3;
+  --input-text:   #1A2A3A;
+  --input-ph:     #90A4AE;
+  --label-color:  #1565C0;
+  --text-dark:    #1A2A3A;
+  --text-light:   #6B8CA8;
+  --sidebar-bg:   #EBF4FF;
+  --sidebar-border: #C8DCF5;
+  --nav-active-bg:  #185FA5;
+  --nav-done-bg:    rgba(24, 95, 165, 0.12);
+  --btn-primary:  #1565C0;
+  --btn-green:    #2E7D32;
+  --font:         'Poppins', sans-serif;
+}
+
+/* ══════════════════════════════════════════
+   LOCK EVERYTHING — no page-level scroll
+   no horizontal scroll anywhere ever
+══════════════════════════════════════════ */
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font);
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ══════════════════════════════════════════
+   PAGE  — full viewport, side by side
+══════════════════════════════════════════ */
+.vo-page {
+  display: flex;
+  flex-direction: row;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;            /* nothing leaks out */
+  background: var(--page-bg);
+}
+
+/* ══════════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════════ */
+.vo-sidebar {
+  width: 240px;
+  min-width: 240px;
+  max-width: 240px;
+  height: 100vh;
+  flex-shrink: 0;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  padding: 28px 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;            /* sidebar itself never scrolls */
+}
+
+.vo-sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.vo-logo-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--blue-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.vo-logo-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--blue-primary);
+  letter-spacing: 2.5px;
+}
+
+.vo-sidebar-sub {
+  font-size: 11px;
+  color: #6090C0;
+  margin-bottom: 24px;
+}
+
+.vo-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.vo-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 11px;
+  border-radius: 10px;
+  opacity: 0.45;
+  cursor: default;
+  transition: all 0.2s;
+}
+
+.vo-nav-item.active {
+  opacity: 1;
+  background: var(--nav-active-bg);
+}
+
+.vo-nav-item.done {
+  opacity: 0.75;
+  background: var(--nav-done-bg);
+}
+
+.vo-nav-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(24, 95, 165, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--blue-primary);
+  flex-shrink: 0;
+}
+
+.vo-nav-item.active .vo-nav-num {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.vo-nav-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--blue-primary);
+}
+
+.vo-nav-item.active .vo-nav-label { color: #fff; }
+
+.vo-sidebar-footer {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--sidebar-border);
+}
+
+.vo-prog-label {
+  font-size: 11px;
+  color: #6090C0;
+  margin-bottom: 6px;
+}
+
+.vo-prog-bar {
+  height: 5px;
+  background: var(--sidebar-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.vo-prog-fill {
+  height: 100%;
+  background: var(--blue-primary);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* ══════════════════════════════════════════
+   MAIN  — takes remaining width
+══════════════════════════════════════════ */
+.vo-main {
+  flex: 1;
+  width: 0;                    /* flex child: don't use intrinsic width */
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 20px 20px;
+  overflow: hidden;            /* never scroll the main area */
+  position: relative;
+}
+
+/* decorative circles */
+.vo-deco-circle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.vo-deco-1 {
+  width: 200px; height: 200px;
+  background: var(--blue-deco);
+  top: -60px; right: 0;
+  transform: translateX(40%);
+  opacity: 0.5;
+   right: -60px;
+}
+.vo-deco-2 {
+  width: 130px; height: 130px;
+  background: var(--blue-pale);
+  top: 50px; right: 0;
+  transform: translateX(20%);
+  opacity: 0.65;
+   right: 40px;
+}
+
+/* ══════════════════════════════════════════
+   CONTENT WRAP  — centred column, fills height
+══════════════════════════════════════════ */
+.vo-content-wrap {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 580px;
+  /* fill remaining height, allow shrinking */
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* page title — fixed height, never shrinks */
+.vo-page-title {
+  flex-shrink: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-dark);
+  letter-spacing: -0.3px;
+  margin-bottom: 14px;
+}
+
+/* ══════════════════════════════════════════
+   CARD  — fills remaining height in wrap
+══════════════════════════════════════════ */
+.vo-dark-card {
+  flex: 1;
+  min-height: 0;               /* allow shrinking */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid var(--card-border);
+  box-shadow: 0 6px 28px rgba(33, 150, 243, 0.18);
+}
+
+/* ── scrollable body — VERTICAL ONLY ── */
+.vo-card-inner {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;          /* NO horizontal scroll */
+  overflow-y: auto;            /* YES vertical scroll when needed */
+  padding: 20px 22px 12px;
+  /* thin vertical scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--blue-light) transparent;
+}
+
+.vo-card-inner::-webkit-scrollbar {
+  width: 4px;
+  height: 0px;                 /* hide horizontal bar completely */
+}
+.vo-card-inner::-webkit-scrollbar-thumb {
+  background: var(--blue-light);
+  border-radius: 4px;
+}
+.vo-card-inner::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ── PINNED footer — always visible at bottom ── */
+.vo-card-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 22px 16px;
+  border-top: 1px solid var(--card-border);
+  background: #fff;
+  border-radius: 0 0 16px 16px;
+}
+
+/* ══════════════════════════════════════════
+   CENTRE HEADING (steps 2 & 3)
+══════════════════════════════════════════ */
+.vo-center-heading {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.vo-sub-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 3px;
+}
+
+.vo-sub-desc {
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+/* ══════════════════════════════════════════
+   FORM LAYOUT
+══════════════════════════════════════════ */
+.vo-form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.vo-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+/* ── LABEL ── */
+.vo-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--label-color);
+}
+
+/* ── INPUT ── */
+.vo-input {
+  width: 100%;
+  height: 40px;
+  background: var(--input-bg);
+  border: 1.5px solid var(--input-border);
+  border-radius: 10px;
+  padding: 0 12px;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--input-text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  /* prevent input from creating horizontal scroll */
+  min-width: 0;
+  max-width: 100%;
+}
+
+.vo-input::placeholder { color: var(--input-ph); }
+
+.vo-input:focus {
+  border-color: var(--input-active);
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.15);
+}
+
+/* textarea */
+.vo-textarea {
+  height: 72px;
+  padding: 10px 12px;
+  resize: none;
+}
+
+/* ── SECTION LABEL ── */
+.vo-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-light);
+  margin-top: 14px;
+  margin-bottom: 6px;
+}
+
+/* ── SELECT ── */
+.vo-select-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.vo-select {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  background: var(--input-bg);
+  border: 1.5px solid var(--input-border);
+  border-radius: 10px;
+  padding: 0 36px 0 12px;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--input-ph);
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.vo-select:focus { border-color: var(--input-active); }
+.vo-select option { color: var(--input-text); }
+
+.vo-chevron {
+  position: absolute;
+  right: 10px;
+  color: var(--input-ph);
+  pointer-events: none;
+}
+
+/* ── LOCATION BOX ── */
+.vo-location-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--input-bg);
+  border: 1.5px solid var(--input-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.vo-location-text {
+  font-size: 13px;
+  color: var(--input-text);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vo-location-icons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ── RADIO ── */
+.vo-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 4px;
+}
+
+.vo-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-dark);
+  cursor: pointer;
+}
+
+.vo-radio-label input {
+  accent-color: var(--blue-mid);
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* ── CHECKBOX ── */
+.vo-checkbox-box {
+  background: var(--input-bg);
+  border: 1.5px solid var(--input-border);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vo-check-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--input-text);
+  cursor: pointer;
+}
+
+.vo-check-label input {
+  accent-color: var(--blue-primary);
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* ── UPLOAD ROW ── */
+.vo-upload-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1.5px dashed var(--blue-mid);
+  border-radius: 10px;
+  background: rgba(33, 150, 243, 0.05);
+  padding: 10px 12px;
+  gap: 8px;
+  margin-top: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.vo-upload-hint {
+  font-size: 12px;
+  color: var(--text-light);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vo-upload-btn {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--blue-mid);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.vo-upload-success { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.vo-success-text   { font-size: 12px; color: #2E7D32; font-weight: 600; }
+.vo-view-btn       { font-size: 12px; color: var(--blue-mid); text-decoration: underline; cursor: pointer; }
+
+/* ══════════════════════════════════════════
+   COMMISSION PLAN CARDS
+══════════════════════════════════════════ */
+.vo-plan-card {
+  background: var(--blue-pale);
+  border: 1.5px solid transparent;
+  border-radius: 14px;
+  padding: 14px 16px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.vo-plan-card:first-of-type { margin-top: 4px; }
+
+.vo-plan-selected {
+  border-color: var(--blue-mid) !important;
+  background: #DBEEFF;
+}
+
+.vo-plan-icon { margin-bottom: 6px; }
+
+.vo-plan-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 2px;
+}
+
+.vo-plan-sub {
+  font-size: 11px;
+  color: #607D8B;
+  margin-bottom: 4px;
+}
+
+.vo-plan-price {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue-primary);
+  margin-bottom: 8px;
+}
+
+.vo-plan-feats {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  font-size: 11px;
+  color: var(--text-dark);
+}
+
+.vo-feat-check {
+  color: var(--blue-mid);
+  font-weight: 700;
+  margin-right: 3px;
+}
+
+.vo-plan-btn {
+  width: 100%;
+  padding: 9px;
+  border-radius: 10px;
+  border: 1.5px solid var(--blue-primary);
+  background: transparent;
+  color: var(--blue-primary);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vo-plan-btn:hover,
+.vo-plan-btn-active {
+  background: var(--blue-primary) !important;
+  color: #fff !important;
+}
+
+/* ══════════════════════════════════════════
+   STEP INDICATOR
+══════════════════════════════════════════ */
+.step-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-wrapper { display: flex; align-items: center; }
+
+.step-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #d9d9d9;
+  color: #666;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-circle.active { background: #2f6fed; color: #fff; }
+
+.step-line {
+  width: 28px;
+  height: 3px;
+  background: #d9d9d9;
+  margin: 0 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.step-line.active { background: #2f6fed; }
+
+/* ══════════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════════ */
+.vo-btn-primary {
+  height: 38px;
+  padding: 0 24px;
+  background: var(--btn-primary);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background 0.2s, transform 0.1s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.vo-btn-primary:hover  { background: #0D47A1; }
+.vo-btn-primary:active { transform: scale(0.97); }
+.vo-btn-green          { background: var(--btn-green) !important; }
+.vo-btn-green:hover    { background: #1B5E20 !important; }
+
+/* ══════════════════════════════════════════
+   MOBILE  ≤ 768px
+══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .vo-sidebar { display: none; }
+
+  .vo-main {
+    /* padding: 14px;
+    height: 100dvh; */
+     width: 100%;
+  overflow-x: hidden;
+  }
+
+  .two-col { grid-template-columns: 1fr; }
+
+  .vo-page-title { font-size: 18px; margin-bottom: 10px; }
+
+  .vo-card-footer {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 16px 16px;
+  }
+
+  .vo-btn-primary {
+    width: 100%;
+    max-width: 260px;
+  }
+}

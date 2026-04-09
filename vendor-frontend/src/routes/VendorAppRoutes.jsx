@@ -4,7 +4,7 @@ import VendorLogin from "../pages/auth/VendorLogin";
 import VendorSignup from "../pages/auth/VendorSignup";
 import Splash from "../pages/Dashboard/Splash";
 import Onboarding from "../pages/Dashboard/Onboarding";
-
+import Vendoronboarding from  "../pages/Dashboard/Vendoronboarding";       
 
 
 const AppRoutes = () => {
@@ -14,6 +14,8 @@ const AppRoutes = () => {
       <Route path="/onboarding" element={<Onboarding />} />
      <Route path="/login" element={<VendorLogin />} />
      <Route path="/signup" element={<VendorSignup />} />
+      <Route path="/vendor/onboarding" element={<Vendoronboarding />} />
+
     </Routes>
   );
 };

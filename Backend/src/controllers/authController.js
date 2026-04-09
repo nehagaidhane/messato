@@ -98,49 +98,72 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const [users] = await db.query(
-      "SELECT * FROM users WHERE email = ?",
+    let user;
+
+    // 🔍 1. Check admins table first
+    const [admins] = await db.query(
+      "SELECT * FROM admins WHERE email = ?",
       [email]
     );
 
-    if (users.length === 0) {
-      return res.status(400).json({ message: "User not found" });
+    if (admins.length > 0) {
+      user = admins[0];
+    } else {
+      // 🔍 2. Then check users
+      const [users] = await db.query(
+        "SELECT * FROM users WHERE email = ?",
+        [email]
+      );
+
+      if (users.length === 0) {
+        return res.status(400).json({ message: "User not found" });
+      }
+
+      user = users[0];
     }
 
-    const user = users[0];
-
+    // 🔐 Password check
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid password" });
     }
 
-    // Access Token
+    // 🚫 OPTIONAL: block inactive admins
+    if (user.status === "inactive") {
+      return res.status(403).json({ message: "Account inactive" });
+    }
+
+    // 🔑 Token
     const accessToken = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES }
     );
 
-    // Refresh Token
+    // Refresh token (optional)
     const refreshToken = jwt.sign(
       { id: user.id },
       process.env.JWT_REFRESH_SECRET,
       { expiresIn: process.env.JWT_REFRESH_EXPIRES }
     );
 
-    // Cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false, // ⚠️ change to true in production (HTTPS)
+      secure: false,
       sameSite: "strict",
     });
 
-    return res.json({
-      message: "Login successful",
-      accessToken,
-      role: user.role,
-    });
+return res.json({
+  message: "Login successful",
+  accessToken,
+  user: {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  },
+});
 
   } catch (err) {
     console.error("Login Error:", err);

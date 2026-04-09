@@ -1,21 +1,33 @@
 const jwt = require("jsonwebtoken");
 
+// ================= VERIFY TOKEN =================
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
 
+  // ❌ No header
   if (!authHeader) {
-    return res.status(403).json({ message: "Token required" });
+    return res.status(401).json({ message: "Token required" });
+  }
+
+  // ❌ Wrong format
+  if (!authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Invalid token format" });
   }
 
   const token = authHeader.split(" ")[1];
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) return res.status(401).json({ message: "Invalid token" });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = decoded;
+    req.user = decoded; // 🔥 attach user
     next();
-  });
+
+  } catch (err) {
+    return res.status(403).json({ message: "Invalid or expired token" });
+  }
 };
+
+// ================= ROLE MIDDLEWARE =================
 
 const isVendor = (req, res, next) => {
   if (req.user.role !== "vendor") {
@@ -31,8 +43,35 @@ const isUser = (req, res, next) => {
   next();
 };
 
+// ✅ NEW (IMPORTANT)
+
+const isAdmin = (req, res, next) => {
+  if (!["admin"].includes(req.user.role)) {
+    return res.status(403).json({ message: "Admin only" });
+  }
+  next();
+};
+
+
+const isSupport = (req, res, next) => {
+  if (req.user.role !== "support") {
+    return res.status(403).json({ message: "Support only" });
+  }
+  next();
+};
+
+const isFinance = (req, res, next) => {
+  if (req.user.role !== "finance") {
+    return res.status(403).json({ message: "Finance only" });
+  }
+  next();
+};
+
 module.exports = {
   verifyToken,
   isVendor,
-  isUser
+  isUser,
+  isAdmin,
+  isSupport,
+  isFinance,
 };

@@ -1,18 +1,16 @@
-// ✅ MUST BE FIRST
 require("dotenv").config();
 
-const express = require("express");
-const cors = require("cors");
-
+const app = require("./src/utils/app");   // ✅ import app
 const { connectDB } = require("./src/config/db");
-
+const cors = require("cors");
+const express = require("express");
 // nbn nbnb nb
 const vendorRoutes = require("./src/routes/vendorRoutes");
 
 
+
 // mnbmnbmnb
 
-const app = express();
 const cookieParser = require("cookie-parser");
 app.use(cookieParser());
 // =========================
@@ -34,16 +32,16 @@ app.use("/api/vendor", vendorRoutes);
 // =========================
 // 🔹 DB Connection
 // =========================
+// 🔹 DB
 connectDB();
 
+// 🔹 Test route
 app.get("/", (req, res) => {
   res.send("🚀 Messato API Running...");
 });
 
-// =========================
-// 🔹 Server
-// =========================
-const PORT = process.env.PORT ||5000;
+// 🔹 Server start
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`🔥 Server running on port ${PORT}`);

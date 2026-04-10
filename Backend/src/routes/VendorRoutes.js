@@ -1,13 +1,6 @@
 const express = require("express");
 const router  = express.Router();
 const { db }  = require("../config/db");
-const multer = require("multer");
-
-const { submitVendor } = require("../controllers/vendorController");
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
-
-router.post("/submit", upload.any(), submitVendor);
 
 /* Haversine */
 function haversine(lat1, lon1, lat2, lon2) {

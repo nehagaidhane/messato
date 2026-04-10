@@ -1,10 +1,11 @@
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { FiArrowLeft, FiCheck, FiShoppingCart } from "react-icons/fi";
+import { useState, useEffect } from "react";
+import { FiArrowLeft, FiCheck, FiShoppingCart, FiLoader } from "react-icons/fi";
 import { useCart } from "../../components/usecart";
+import api from "../../api/axios"; // your existing axios instance
 import "./Tiffindetails.css";
 
-// 🔥 Get day name from a date string or today
+// ─── Helpers ───────────────────────────────────────────────────────────────
 const getDayName = (dateStr) => {
   const date = dateStr ? new Date(dateStr) : new Date();
   return date.toLocaleDateString("en-IN", { weekday: "long" });
@@ -12,102 +13,199 @@ const getDayName = (dateStr) => {
 
 const getFormattedDate = (dateStr) => {
   const date = dateStr ? new Date(dateStr) : new Date();
-  return date.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+  return date.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 };
 
-const MEAL_DATA = {
-  lunch: {
-    items: [
-      "Sabji (Rajma Masala)",
-      "Chapati - 2 Pieces",
-      "Papad",
-      "Moong Dal Halwa - 1 Plate",
-    ],
-    price: 40,
-    image: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800",
-    time: "12:00 – 3:00 PM",
-    emoji: "🌞",
-    label: "Lunch",
-  },
-  dinner: {
-    items: [
-      "Paneer Sabji",
-      "Chapati - 3 Pieces",
-      "Rice",
-      "Salad",
-    ],
-    price: 50,
-    image: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=800",
-    time: "7:00 – 9:00 PM",
-    emoji: "🌙",
-    label: "Dinner",
-  },
+// Fallback images per meal type (used only when DB has no image)
+const FALLBACK_IMAGES = {
+  lunch:
+    "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=800",
+  dinner:
+    "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=800",
 };
 
+const MEAL_META = {
+  lunch:  { emoji: "🌞", label: "Lunch",  time: "12:00 – 3:00 PM" },
+  dinner: { emoji: "🌙", label: "Dinner", time: "7:00 – 9:00 PM"  },
+};
+
+// ─── Component ─────────────────────────────────────────────────────────────
 const TiffinDetails = () => {
-  const { mealType } = useParams();
+  const { mealType, vendorId } = useParams();   // route: /tiffin/:vendorId/:mealType
   const navigate = useNavigate();
   const query = new URLSearchParams(useLocation().search);
 
   const date = query.get("date");
   const plan = query.get("plan");
 
-  const data = MEAL_DATA[mealType];
+  // API state
+  const [menuData, setMenuData]   = useState(null);
+  const [loading,  setLoading]    = useState(true);
+  const [apiError, setApiError]   = useState(null);
 
-  const [qty, setQty] = useState(1);
-  const [instructions, setInstructions] = useState("");
+  // UI state
+  const [qty, setQty]                         = useState(1);
+  const [instructions, setInstructions]       = useState("");
   const [instructionSaved, setInstructionSaved] = useState(false);
-  const [addedToCart, setAddedToCart] = useState(false);
+  const [addedToCart, setAddedToCart]         = useState(false);
 
   const { addToCart, setCartOpen } = useCart();
 
-  // 🔥 Dynamic day name from URL date or today
-  const dayName = getDayName(date);
-  const displayDate = date ? getFormattedDate(date) : getFormattedDate();
-  const mealName = `${dayName} (${data?.label})`;
+  // ── Fetch menu from backend ──────────────────────────────────────────────
+  useEffect(() => {
+    if (!vendorId) {
+      setApiError("Vendor ID is missing.");
+      setLoading(false);
+      return;
+    }
 
+    const fetchMenu = async () => {
+      setLoading(true);
+      setApiError(null);
+      try {
+        /*
+          GET /api/menus/:vendorId
+          Response: { lunch: {...} | null, dinner: {...} | null }
+        */
+const { data } = await api.get("/menu", {
+  baseURL: "http://localhost:5000/api",
+  params: {
+    vendorId,
+    date: date || new Date().toISOString().split("T")[0],
+  },
+});
+
+        const meal = data[mealType]; // data.lunch or data.dinner
+
+        if (!meal) {
+          setApiError(`No ${mealType} menu found for this vendor.`);
+          setMenuData(null);
+        } else {
+          /*
+            DB columns used:
+              id, vendor_id, name, description, price, type, created_at
+            
+            We parse "description" as a newline-separated list of items.
+            e.g. "Rajma Masala\nChapati - 2 pcs\nPapad"
+          */
+         const items = meal.items?.length
+  ? meal.items.map(i => `${i.name} (${i.quantity})`)
+  : ["Menu items not listed"];
+
+          setMenuData({
+            id:    meal.id,
+            name:  meal.name,
+            price: Number(meal.price),
+            items,
+            image: meal.image || FALLBACK_IMAGES[mealType], // swap with meal.image if you add an image column later
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        setApiError(
+          err.response?.data?.error || err.message || "Failed to load menu."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMenu();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendorId, mealType]);
+
+  // ── Derived display values ───────────────────────────────────────────────
+  const meta        = MEAL_META[mealType] ?? { emoji: "🍽️", label: mealType, time: "" };
+  const dayName     = getDayName(date);
+  const displayDate = getFormattedDate(date);
+  const mealName    = `${dayName} (${meta.label})`;
+
+  const subtotal  = (menuData?.price ?? 0) * qty;
+  const delivery  = 10;
+  const total     = subtotal + delivery;
+
+  // ── Handlers ────────────────────────────────────────────────────────────
   const handleSaveInstruction = () => {
     setInstructionSaved(true);
     setTimeout(() => setInstructionSaved(false), 2000);
   };
 
+  const buildCartItem = () => ({
+    id:           `${mealType}-${vendorId}-${date || plan || "default"}`,
+    name:         mealName,
+    price:        menuData.price,
+    image:        menuData.image,
+    quantity:     qty,
+    meal_time:    mealType,
+    instructions,
+    vendorId,
+    menuId:       menuData.id,
+  });
+
   const handleAddToCart = () => {
-    const cartItem = {
-      id: `${mealType}-${date || plan || "default"}`,
-      name: mealName,
-      price: data.price,
-      image: data.image,
-      quantity: qty,
-      meal_time: mealType,
-      instructions,
-    };
-    addToCart(cartItem);
+    if (!menuData) return;
+    addToCart(buildCartItem());
     setCartOpen(true);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
-  const handleOrderNow = () => {
-    const cartItem = {
-      id: `${mealType}-${date || plan || "default"}`,
-      name: mealName,
-      price: data.price,
-      image: data.image,
-      quantity: qty,
-      meal_time: mealType,
-      instructions,
-    };
-    addToCart(cartItem);
-    navigate("/confirm-address");
-  };
+const handleOrderNow = async () => {
+  if (!menuData) return;
 
-  if (!data) {
-    return <h2 style={{ padding: "20px" }}>No data found</h2>;
+  try {
+    const cartItem = buildCartItem();
+    addToCart(cartItem);
+
+    // ✅ Pass order data to ConfirmAddress via navigation state
+    navigate("/confirm-address", {
+      state: {
+        vendorId,
+        menuId:              menuData.id,
+        mealType,
+        orderDate:           date || new Date().toISOString().split("T")[0],
+        quantity:            qty,
+        totalPrice:          total,
+        specialInstructions: instructions,
+        name:                menuData.name,   // shown in order strip
+        total,                                // shown in order strip
+      },
+    });
+
+  } catch (err) {
+    console.error("Order error:", err);
+    alert("Failed to proceed. Try again.");
+  }
+};
+  // ── Render ───────────────────────────────────────────────────────────────
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="td-page td-centered">
+        <FiLoader className="td-spinner" size={32} />
+        <p>Loading menu…</p>
+      </div>
+    );
   }
 
-  const subtotal = data.price * qty;
-  const delivery = 10;
-  const total = subtotal + delivery;
+  // Error state
+  if (apiError || !menuData) {
+    return (
+      <div className="td-page td-centered">
+        <p style={{ color: "var(--color-error, #e53e3e)", fontWeight: 600 }}>
+          {apiError || "Menu not found."}
+        </p>
+        <button className="td-back-btn" onClick={() => navigate(-1)}>
+          <FiArrowLeft size={18} /> Go Back
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="td-page">
@@ -119,7 +217,7 @@ const TiffinDetails = () => {
         </button>
         <div className="td-header-text">
           <h3>Order Summary</h3>
-          <span>{data.emoji} {data.label} • {data.time}</span>
+          <span>{meta.emoji} {meta.label} • {meta.time}</span>
         </div>
       </div>
 
@@ -129,11 +227,11 @@ const TiffinDetails = () => {
         {/* LEFT — Image + date badge */}
         <div className="td-left">
           <div className="td-img-wrap">
-            <img src={data.image} alt="food" className="td-img" />
+            <img src={menuData.image} alt="food" className="td-img" />
             <div className="td-img-gradient" />
             <div className="td-img-badge">
-              <span className="td-day-tag">{data.emoji} {data.label}</span>
-              <span className="td-time-tag">{data.time}</span>
+              <span className="td-day-tag">{meta.emoji} {meta.label}</span>
+              <span className="td-time-tag">{meta.time}</span>
             </div>
           </div>
 
@@ -141,7 +239,7 @@ const TiffinDetails = () => {
           <div className="td-items-panel">
             <p className="td-panel-title">What's included</p>
             <ul className="td-items-list">
-              {data.items.map((item, i) => (
+              {menuData.items.map((item, i) => (
                 <li key={i}>
                   <span className="td-dot" />
                   {item}
@@ -154,7 +252,7 @@ const TiffinDetails = () => {
         {/* RIGHT — Details card */}
         <div className="td-card">
 
-          {/* Meal name — dynamic day */}
+          {/* Meal name */}
           <div className="td-title-row">
             <div>
               <h4>{mealName}</h4>
@@ -162,7 +260,7 @@ const TiffinDetails = () => {
               {plan && <p className="td-sub">📋 Plan: <strong>{plan}</strong></p>}
             </div>
             <span className={`td-meal-badge ${mealType}`}>
-              {data.emoji} {data.label}
+              {meta.emoji} {meta.label}
             </span>
           </div>
 
@@ -172,7 +270,7 @@ const TiffinDetails = () => {
           <div className="td-items-mobile">
             <p className="td-panel-title">What's included</p>
             <ul className="td-items-list">
-              {data.items.map((item, i) => (
+              {menuData.items.map((item, i) => (
                 <li key={i}>
                   <span className="td-dot" />
                   {item}
@@ -220,7 +318,10 @@ const TiffinDetails = () => {
               <input
                 placeholder="e.g. Less spicy, no onion..."
                 value={instructions}
-                onChange={(e) => { setInstructions(e.target.value); setInstructionSaved(false); }}
+                onChange={(e) => {
+                  setInstructions(e.target.value);
+                  setInstructionSaved(false);
+                }}
               />
               <button
                 className={instructionSaved ? "saved" : ""}
@@ -238,7 +339,9 @@ const TiffinDetails = () => {
               className={`cart-btn ${addedToCart ? "added" : ""}`}
               onClick={(e) => { e.stopPropagation(); handleAddToCart(); }}
             >
-              {addedToCart ? <><FiCheck size={15} /> Added!</> : <><FiShoppingCart size={15} /> Add to Cart</>}
+              {addedToCart
+                ? <><FiCheck size={15} /> Added!</>
+                : <><FiShoppingCart size={15} /> Add to Cart</>}
             </button>
             <button className="order-btn" onClick={handleOrderNow}>
               Order Now →

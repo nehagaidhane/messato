@@ -343,22 +343,91 @@ export default function ConfirmAddress() {
     }
   };
 
-  const handleConfirm = () => {
-    if (!selected || confirming || confirmed) return;
-    setConfirming(true);
+const handleConfirm = async () => {
+  if (!selected || confirming || confirmed) return;
+
+  console.log("orderData at confirm:", orderData);
+
+  if (!orderData.vendorId || !orderData.menuId) {
+    alert("Order data missing. Please go back and try again.");
+    return;
+  }
+
+  setConfirming(true);
+
+  try {
+    const token =
+      localStorage.getItem("accessToken") ||
+      sessionStorage.getItem("accessToken");
+
+    if (!token) {
+      alert("Please login again");
+      navigate("/");
+      return;
+    }
+
+    // ── Pull user info from wherever you store it after login ──────────
+    // Option A: you stored the full user object in localStorage on login
+    const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+    // Option B: decode from JWT (no extra storage needed)
+    // const storedUser = JSON.parse(atob(token.split(".")[1]));
+
+    const res = await fetch("http://localhost:5000/api/orders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        vendorId:            orderData.vendorId,
+        menuId:              orderData.menuId,
+        quantity:            orderData.quantity || 1,
+        totalPrice:          orderData.totalPrice || orderData.total,
+        specialInstructions: orderData.specialInstructions || "",
+        deliveryAddress:     selected.full,
+      }),
+    });
+
+    const data = await res.json();
+    console.log("Order response:", data);
+
+    if (!res.ok) throw new Error(data.error || "Order failed");
+
+    setConfirmed(true);
+
     setTimeout(() => {
-      setConfirmed(true);
-      setTimeout(() => {
-        navigate("/payment", {
-          state: {
-            ...orderData,
-            deliveryAddress: selected,
-            deliveryDate: today,
-          },
-        });
-      }, 700);
-    }, 900);
-  };
+      navigate("/payment", {
+        state: {
+          // ── Order identifiers ──────────────────────────────────────
+          orderId:       data.orderId,          // from backend response
+          vendorId:      orderData.vendorId,
+          menuId:        orderData.menuId,
+
+          // ── Amount ────────────────────────────────────────────────
+          totalAmount:   orderData.totalPrice || orderData.total,
+
+          // ── Customer info (from localStorage or JWT decode) ───────
+          customerName:  storedUser.name  || storedUser.full_name || "",
+          customerEmail: storedUser.email || "",
+          customerPhone: storedUser.phone || storedUser.mobile   || "",
+
+          // ── Delivery info ─────────────────────────────────────────
+          deliveryAddress: selected,
+          deliveryDate:    today,
+
+          // ── Pass-through for display on payment page ──────────────
+          name:  orderData.name,
+          image: orderData.image,
+        },
+      });
+    }, 700);
+
+  } catch (err) {
+    console.error("Confirm error:", err);
+    alert("Failed to place order: " + err.message);
+    setConfirming(false);
+  }
+};
 
   return (
     <div className="ca-root">

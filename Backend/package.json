@@ -29,7 +29,8 @@
     "mysql": "^2.18.1",
     "mysql2": "^3.20.0",
     "nodemailer": "^8.0.4",
-    "promise": "^8.3.0"
+    "promise": "^8.3.0",
+    "razorpay": "^2.9.6"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

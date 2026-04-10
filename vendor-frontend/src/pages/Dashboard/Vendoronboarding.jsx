@@ -196,9 +196,9 @@ function Step2({ data, onChange, onNext, onBack }) {
           <div className="vo-select-box" style={{ marginTop: 4 }}>
             <select className="vo-select" value={data.radius} onChange={e => onChange("radius", e.target.value)}>
               <option value="">Service Radius</option>
-              <option>1 km</option>
-              <option>2 km</option>
-              <option>5 km</option>
+              <option value="1">1 km</option>
+              <option value="2">2 km</option>
+              <option value="5">5 km</option>
             </select>
             <svg className="vo-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg>
           </div>
@@ -484,96 +484,96 @@ export default function VendorOnboarding() {
   // b bn bn 
 
   const validateStep = () => {
-  switch (step) {
-    case 1:
-      if (!form.messName || !form.email || !form.mobile || !form.description) {
-        alert("All fields are required");
-        return false;
-      }
-      return true;
+    switch (step) {
+      case 1:
+        if (!form.messName || !form.email || !form.mobile || !form.description) {
+          alert("All fields are required");
+          return false;
+        }
+        return true;
 
-    case 2:
-      if (!form.location || !form.town || !form.radius || !form.document) {
-        alert("Please fill all fields & upload document");
-        return false;
-      }
-      return true;
+      case 2:
+        if (!form.location || !form.town || !form.radius || !form.document) {
+          alert("Please fill all fields & upload document");
+          return false;
+        }
+        return true;
 
-    case 3:
-      if (!form.plan) {
-        alert("Please select a plan");
-        return false;
-      }
-      return true;
+      case 3:
+        if (!form.plan) {
+          alert("Please select a plan");
+          return false;
+        }
+        return true;
 
-    case 4:
-      if (!form.foodTypes.length || !form.cuisineType || !form.operatingDays) {
-        alert("Please fill all food details");
-        return false;
-      }
-      return true;
+      case 4:
+        if (!form.foodTypes.length || !form.cuisineType || !form.operatingDays) {
+          alert("Please fill all food details");
+          return false;
+        }
+        return true;
 
-    case 5:
-      if (!form.fssaiNumber || !form.fssaiValidity || !form.fssaiCert) {
-        alert("FSSAI details required");
-        return false;
-      }
-      return true;
+      case 5:
+        if (!form.fssaiNumber || !form.fssaiValidity || !form.fssaiCert) {
+          alert("FSSAI details required");
+          return false;
+        }
+        return true;
 
-    case 6:
-      if (!form.accountHolder || !form.bankName || !form.accountNumber || !form.ifsc) {
-        alert("Bank details required");
-        return false;
-      }
-      return true;
+      case 6:
+        if (!form.accountHolder || !form.bankName || !form.accountNumber || !form.ifsc) {
+          alert("Bank details required");
+          return false;
+        }
+        return true;
 
-    default:
-      return true;
-  }
-};
+      default:
+        return true;
+    }
+  };
 
-// mnmnmnm
+  // mnmnmnm
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
- const next = () => {
-  if (validateStep()) {
-    setStep(s => Math.min(s + 1, 6));
-  }
-};
+  const next = () => {
+    if (validateStep()) {
+      setStep(s => Math.min(s + 1, 6));
+    }
+  };
   const back = () => setStep(s => Math.max(s - 1, 1));
 
- const done = async () => {
-  try {
-    const formData = new FormData();
+  const done = async () => {
+    try {
+      const formData = new FormData();
 
-    // append all fields
-    Object.keys(form).forEach(key => {
-      if (form[key] instanceof File) {
-        formData.append(key, form[key]);
-      } else if (Array.isArray(form[key])) {
-        form[key].forEach(v => formData.append(key, v));
-      } else {
-        formData.append(key, form[key]);
+      // append all fields
+      Object.keys(form).forEach(key => {
+        if (form[key] instanceof File) {
+          formData.append(key, form[key]);
+        } else if (Array.isArray(form[key])) {
+          form[key].forEach(v => formData.append(key, v));
+        } else {
+          formData.append(key, form[key]);
+        }
+      });
+
+      const res = await fetch("http://localhost:5000/api/vendor/submit", {
+        method: "POST",
+        body: formData // ❗ NO JSON
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        alert("🎉 Registration submitted successfully!");
+        window.location.href = "/pending";
       }
-    });
 
-    const res = await fetch("http://localhost:5000/api/vendor/submit", {
-      method: "POST",
-      body: formData // ❗ NO JSON
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      alert("🎉 Registration submitted successfully!");
-      window.location.href = "/pending";
+    } catch (err) {
+      console.log(err);
+      alert("Error submitting form");
     }
-
-  } catch (err) {
-    console.log(err);
-    alert("Error submitting form");
-  }
-};
+  };
 
 
   return (

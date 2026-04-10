@@ -22,7 +22,7 @@ export default function AdminRole() {
 
       const res = await fetch(API, {
         headers: {
-          Authorization: token,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -71,7 +71,7 @@ export default function AdminRole() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(form),
       });
@@ -107,7 +107,7 @@ export default function AdminRole() {
       await fetch(`${API}/${id}`, {
         method: "DELETE",
         headers: {
-          Authorization: token,
+          Authorization: `Bearer ${token}`,
         },
       });
 

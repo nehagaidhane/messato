@@ -1,17 +1,17 @@
 // controllers/userController.js
 
-const db = require("../config/db"); // make sure this exists
+const { db } = require("../config/db"); // ✅ destructure { db }
 
 exports.saveUserLocation = async (req, res) => {
   try {
     console.log("BODY:", req.body);
-    console.log("USER:", req.user); // 👈 IMPORTANT
+    console.log("USER:", req.user);
 
     const userId = req.user.id;
 
     await db.query(
       `UPDATE users 
-       SET latitude=?, longitude=?, address=?, city=?, state=?, zip=?, town=?
+       SET latitude=?, longitude=?, address=?, city=?, state=?, pincode=?, town=?
        WHERE id=?`,
       [
         req.body.latitude,
@@ -19,7 +19,7 @@ exports.saveUserLocation = async (req, res) => {
         req.body.address,
         req.body.city,
         req.body.state,
-        req.body.zip,
+        req.body.pincode,  // ✅ fixed: was req.body.zip (column doesn't exist)
         req.body.town,
         userId
       ]
@@ -28,8 +28,48 @@ exports.saveUserLocation = async (req, res) => {
     res.json({ message: "Location saved" });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error saving location" });
+    console.error("DB ERROR:", err.message);
+    res.status(500).json({ message: "Error saving location", detail: err.message });
   }
 };
 
+exports.updateUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const {
+      firstName, lastName, email, phone,
+      dob, gender, bio, address, city,
+      pincode, latitude, longitude
+    } = req.body;
+
+    await db.query(
+      `UPDATE users 
+       SET first_name=?, last_name=?, email=?, phone=?, 
+           dob=?, gender=?, bio=?, address=?, city=?, 
+           pincode=?, latitude=?, longitude=?
+       WHERE id=?`,
+      [
+        firstName  || null,
+        lastName   || null,
+        email      || null,
+        phone      || null,
+        dob        || null,
+        gender     || null,
+        bio        || null,
+        address    || null,
+        city       || null,
+        pincode    || null,
+        latitude   || null,
+        longitude  || null,
+        userId
+      ]
+    );
+
+    res.json({ message: "Profile updated successfully" });
+
+  } catch (err) {
+    console.error("DB ERROR:", err.message);
+    res.status(500).json({ message: "Error updating profile", detail: err.message });
+  }
+};

@@ -2,10 +2,12 @@ const express = require("express");
 const axios = require("axios");
 const router = express.Router();
 
-const { authenticateUser } = require("../middleware/authMiddleware");
+const { verifyToken, isUser  } = require("../middleware/authMiddleware");
 const { saveUserLocation } = require("../controllers/userController");
+const { updateUserProfile } = require("../controllers/userController")
 
-router.post("/save-location", authenticateUser, saveUserLocation);
+router.post("/save-location", verifyToken, saveUserLocation);
+router.put("/update-profile", verifyToken, isUser, updateUserProfile);
 
 
 

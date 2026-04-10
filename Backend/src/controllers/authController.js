@@ -101,62 +101,71 @@ exports.userLogin = async (req, res) => {
   try {
     const { email, password, rememberMe } = req.body;
 
-    const [users] = await db.query(
-      "SELECT * FROM users WHERE email = ?", [email]
+    let user;
+
+    // 🔍 1. Check admins table first
+    const [admins] = await db.query(
+      "SELECT * FROM admins WHERE email = ?",
+      [email]
     );
-    if (users.length === 0)
-      return res.status(400).json({ message: "User not found" });
 
-    const user = users[0];
+    if (admins.length > 0) {
+      user = admins[0];
+    } else {
+      // 🔍 2. Then check users
+      const [users] = await db.query(
+        "SELECT * FROM users WHERE email = ?",
+        [email]
+      );
 
-    if (!user.password)
-      return res.status(400).json({ message: "Please login using Google or Facebook" });
+      if (users.length === 0) {
+        return res.status(400).json({ message: "User not found" });
+      }
 
+      user = users[0];
+    }
+
+    // 🔐 Password check
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
       return res.status(400).json({ message: "Invalid password" });
+    }
 
-    // rememberMe = true  → 30-day token
-    // rememberMe = false → default short expiry from .env
-    const accessToken = signToken(user.id, "user", !!rememberMe);
+    // 🚫 OPTIONAL: block inactive admins
+    if (user.status === "inactive") {
+      return res.status(403).json({ message: "Account inactive" });
+    }
 
-    return res.json({
-      message: "User login successful",
-      accessToken,
-      type: "user",
-    });
-  } catch (err) {
-    console.error("User Login Error:", err);
-    return res.status(500).json({ message: "Server error" });
-  }
-};
-
-// ═════════════════════════════════════════════════════════════
-// VENDOR LOGIN
-// ═════════════════════════════════════════════════════════════
-exports.vendorLogin = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const [vendors] = await db.query(
-      "SELECT * FROM vendors WHERE email = ?", [email]
+    // 🔑 Token
+    const accessToken = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES }
     );
-    if (vendors.length === 0)
-      return res.status(400).json({ message: "Vendor not found" });
 
-    const vendor = vendors[0];
+    // Refresh token (optional)
+    const refreshToken = jwt.sign(
+      { id: user.id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES }
+    );
 
-    const isMatch = await bcrypt.compare(password, vendor.password);
-    if (!isMatch)
-      return res.status(400).json({ message: "Invalid password" });
-
-    const accessToken = signToken(vendor.id, "vendor");
-
-    return res.json({
-      message: "Vendor login successful",
-      accessToken,
-      type: "vendor",
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "strict",
     });
+
+return res.json({
+  message: "Vendor login successful",
+  accessToken,
+  user: {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    type: "vendor",
+  },
+});
   } catch (err) {
     console.error("Vendor Login Error:", err);
     return res.status(500).json({ message: "Server error" });

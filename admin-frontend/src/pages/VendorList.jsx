@@ -650,7 +650,7 @@ export default function VendorList() {
     setError(null);
     try {
       console.log("Fetching vendors...");
-      const vendorRes = await API.get("/api/vendors");
+      const vendorRes = await API.get("/api/admin/vendors");
       console.log("Response:", vendorRes.data);
       
       const data = Array.isArray(vendorRes.data) 
@@ -662,7 +662,7 @@ export default function VendorList() {
 
       // Try to get counts
       try {
-        const countRes = await API.get("/api/vendors/counts");
+        const countRes = await API.get("/api/admin/vendors/counts");
         console.log("Counts:", countRes.data);
         setCounts(countRes.data);
       } catch {

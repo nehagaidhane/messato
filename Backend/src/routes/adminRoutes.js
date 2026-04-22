@@ -9,6 +9,11 @@ const {
   toggleUserStatus,
 } = require("../controllers/adminController");
 
+const {
+  getVendors,
+  getVendorCounts,
+} = require("../controllers/vendorController");
+
 
 const { verifyToken, isAdmin } = require("../middleware/authMiddleware");
 
@@ -30,5 +35,11 @@ router.get("/users", verifyToken, isAdmin, getUsers);
 
 // Block / Unblock user
 router.put("/users/:id/status", verifyToken, isAdmin, toggleUserStatus);
+
+// ================= VENDORS =================
+
+// Admin vendor list & counts (separate from public vendor routes)
+router.get("/vendors", verifyToken, isAdmin, getVendors);
+router.get("/vendors/counts", verifyToken, isAdmin, getVendorCounts);
 
 module.exports = router;

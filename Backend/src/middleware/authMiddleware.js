@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 
 // ================= VERIFY TOKEN =================
 const verifyToken = (req, res, next) => {
-  const authHeader = req.headers["authorization"];
+  const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(403).json({ message: "Token required" });
@@ -11,60 +11,99 @@ const verifyToken = (req, res, next) => {
   const token = authHeader.split(" ")[1];
 
   try {
-    // ADD THIS — see exactly what secret is being used
-    console.log("JWT_SECRET:", process.env.JWT_SECRET);
-    console.log("TOKEN RECEIVED:", token);
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("DECODED:", decoded);
 
-    req.user = decoded; // 🔥 attach user
+    console.log("✅ TOKEN VERIFIED:", decoded);
+
+    req.user = decoded; // { id, role, type }
     next();
+
   } catch (err) {
-    console.error("JWT ERR:", err.message); // "invalid signature" or "jwt expired"
-    return res.status(401).json({ message: "Invalid or expired token" });
+    console.log("❌ TOKEN ERROR:", err.message);
+
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token expired" });
+    }
+
+    return res.status(401).json({ message: "Invalid token" });
   }
+};
+
+// ================= GENERIC ROLE CHECK =================
+const requireRole = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    // check both type & role safely
+    const userRole = req.user.role || req.user.type;
+
+    if (!roles.includes(userRole)) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    next();
+  };
 };
 
 // ================= ROLE MIDDLEWARE =================
 
-const isVendor = (req, res, next) => {
-  if (!req.user || req.user.type !== "vendor")
-    return res.status(403).json({ message: "Vendor only access" });
-  next();
-};
-
-const isUser = (req, res, next) => {
-  if (!req.user || req.user.type !== "user")
-    return res.status(403).json({ message: "User only access" });
-  next();
-};
-
-// ✅ NEW (IMPORTANT)
-
+// ✅ ADMIN
 const isAdmin = (req, res, next) => {
-  if (!["admin"].includes(req.user.role)) {
+  console.log("👤 USER:", req.user);
+
+  if (!req.user) {
+    return res.status(403).json({ message: "Unauthorized" });
+  }
+
+  const role = req.user.role || req.user.type;
+
+  if (!["admin", "superadmin"].includes(role)) {
     return res.status(403).json({ message: "Admin only" });
+  }
+
+  next();
+};
+
+// ✅ USER
+const isUser = (req, res, next) => {
+  if (!req.user || (req.user.type !== "user" && req.user.role !== "user")) {
+    return res.status(403).json({ message: "User only access" });
   }
   next();
 };
 
+// ✅ VENDOR
+const isVendor = (req, res, next) => {
+  if (!req.user || (req.user.type !== "vendor" && req.user.role !== "vendor")) {
+    return res.status(403).json({ message: "Vendor only access" });
+  }
+  next();
+};
 
+// ✅ SUPPORT
 const isSupport = (req, res, next) => {
-  if (req.user.role !== "support") {
+  if (!req.user || req.user.role !== "support") {
     return res.status(403).json({ message: "Support only" });
   }
   next();
 };
 
+// ✅ FINANCE
 const isFinance = (req, res, next) => {
-  if (req.user.role !== "finance") {
+  if (!req.user || req.user.role !== "finance") {
     return res.status(403).json({ message: "Finance only" });
   }
   next();
 };
 
-// Remove duplicate authenticateUser — just alias verifyToken
-const authenticateUser = verifyToken;
-
-module.exports = { verifyToken, isVendor, isUser, authenticateUser };
+module.exports = {
+  verifyToken,
+  requireRole,
+  isVendor,
+  isUser,
+  isAdmin,
+  isSupport,
+  isFinance,
+};

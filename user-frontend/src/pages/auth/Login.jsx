@@ -101,19 +101,24 @@ export default function Login() {
     }
     try {
       setLoading(true);
-      const res = await api.post("/user/login", {
+      const res = await api.post("/auth/user/login", {
         email:      form.email,
         password:   form.password,
-        rememberMe: remember,           // ← sent to backend for longer JWT
+        rememberMe: remember,
       });
 
-      if (res.data.type !== "user") {
-        alert("Please login as user");
-        return;
-      }
+      console.log("✅ Login Response:", res.data);
+
+     if (res.data.user.type !== "user") {
+  console.warn("⚠️ User type mismatch:", res.data.user.type);
+  alert("Please login as user");
+  return;
+}
 
       // Save token based on Remember Me
-      saveToken(res.data.accessToken, res.data.type, remember);
+  saveToken(res.data.accessToken, res.data.user.type, remember);
+  console.log("TYPE:", res.data.user.type);
+      console.log("✅ Token saved, type:", res.data.type);
 
       // Persist email field if remember checked
       if (remember) {
@@ -134,7 +139,7 @@ export default function Login() {
   // ── Google login ─────────────────────────────────────────────
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const res = await api.post("/google-login", {
+      const res = await api.post("/auth/google-login", {
         token: credentialResponse.credential,
       });
       saveToken(res.data.accessToken, res.data.type, false);
@@ -158,7 +163,7 @@ export default function Login() {
         async (response) => {
           if (response.authResponse) {
             try {
-              const res = await api.post("/facebook-login", {
+              const res = await api.post("/auth/facebook-login", {
                 accessToken: response.authResponse.accessToken,
                 userID:      response.authResponse.userID,
               });
@@ -194,7 +199,7 @@ export default function Login() {
       const identityToken = appleResponse.authorization.id_token;
       const fullName      = appleResponse.user?.name || null;
 
-      const res = await api.post("/apple-login", {
+      const res = await api.post("/auth/apple-login", {
         identityToken,
         fullName,
       });
@@ -218,7 +223,7 @@ export default function Login() {
     if (!forgotEmail.trim()) { alert("Enter your email"); return; }
     try {
       setForgotLoading(true);
-      await api.post("/forgot-password", { email: forgotEmail });
+      await api.post("/auth/forgot-password", { email: forgotEmail });
       setForgotSent(true);
     } catch (err) {
       alert(err.response?.data?.message || "Failed to send reset email");

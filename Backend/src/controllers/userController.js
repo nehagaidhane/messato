@@ -72,7 +72,7 @@ exports.updateUserProfile = async (req, res) => {
     console.error("DB ERROR:", err.message);
     res.status(500).json({ message: "Error updating profile", detail: err.message });
   }
-};const { db } = require("../config/db");
+};
 
 // ================= GET USERS =================
 exports.getUsers = async (req, res) => {

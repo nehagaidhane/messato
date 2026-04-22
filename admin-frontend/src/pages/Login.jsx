@@ -19,33 +19,36 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
+      const res = await fetch("http://localhost:5000/api/auth/user/login", { // ✅ FIXED
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(form),
-        credentials: "include", // for refresh token cookie
+        credentials: "include",
       });
 
       const data = await res.json();
 
-console.log("LOGIN RESPONSE:", data); // 🔥 ADD THIS
+      console.log("LOGIN RESPONSE:", data);
 
-if (!res.ok) {
-  alert(data.message || "Login failed");
-  return;
-}
+      if (!res.ok) {
+        alert(data.message || "Login failed");
+        return;
+      }
 
       // ✅ Store token
       localStorage.setItem("token", data.accessToken);
       localStorage.setItem("user", JSON.stringify(data.user));
+
+      const role = data.user?.role; // ✅ FIXED
+
       // ✅ Redirect based on role
-      if (data.role === "superadmin") {
+      if (role === "superadmin") {
         navigate("/admin-role");
-      } else if (data.role === "admin") {
+      } else if (role === "admin") {
         navigate("/");
-      } else if (data.role === "support") {
+      } else if (role === "support") {
         navigate("/support");
       } else {
         navigate("/");
@@ -62,19 +65,16 @@ if (!res.ok) {
 
       <div className="w-full max-w-md bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg">
 
-        {/* LOGO */}
         <div className="flex justify-center mb-6">
           <img src="/logo.png" className="h-14" />
         </div>
 
-        {/* TITLE */}
         <h2 className="text-2xl font-semibold text-center mb-6 text-black dark:text-white">
           Admin Login
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-5">
 
-          {/* EMAIL */}
           <div className="flex items-center border dark:border-gray-600 rounded-lg px-3 py-2 bg-gray-50 dark:bg-gray-700">
             <Mail size={18} className="text-gray-400 mr-2" />
             <input
@@ -88,7 +88,6 @@ if (!res.ok) {
             />
           </div>
 
-          {/* PASSWORD */}
           <div className="flex items-center border dark:border-gray-600 rounded-lg px-3 py-2 bg-gray-50 dark:bg-gray-700">
             <Lock size={18} className="text-gray-400 mr-2" />
             <input
@@ -102,7 +101,6 @@ if (!res.ok) {
             />
           </div>
 
-          {/* BUTTON */}
           <button
             type="submit"
             className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg transition"

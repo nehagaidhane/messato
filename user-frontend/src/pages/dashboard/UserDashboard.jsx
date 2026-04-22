@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./UserDashboard.css";
 
 /* ─── Axios instance (already has baseURL + auth token) ─── */
-import api from "../../api/axios";   // adjust path to match your project structure
+import api from "../../api/axios";   
 
 /* ─── Icons ─── */
 import { IoStorefrontOutline } from "react-icons/io5";

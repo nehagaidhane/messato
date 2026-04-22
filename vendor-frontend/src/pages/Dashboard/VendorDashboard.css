@@ -1,0 +1,64 @@
+.dashboard {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 220px;
+  background: #111827;
+  color: white;
+  padding: 20px;
+}
+
+/* Hide sidebar on mobile */
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+}
+
+/* Main */
+.dashboard-main {
+  flex: 1;
+  background: #f9fafb;
+  padding: 20px;
+}
+
+/* Topbar */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Cards */
+.dashboard-content {
+  margin-top: 20px;
+  display: grid;
+  gap: 20px;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+/* Charts */
+.donut-chart {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: conic-gradient(
+    #4f46e5 60%,
+    #f97316 20%,
+    #ef4444 20%
+  );
+  margin: auto;
+}
+
+.bar-chart {
+  height: 120px;
+  background: linear-gradient(to top, #4f46e5 30%, transparent 30%);
+}

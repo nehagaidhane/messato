@@ -5,26 +5,30 @@ const {
   createAdmin,
   getAdmins,
   deleteAdmin,
+  getUsers,
+  toggleUserStatus,
 } = require("../controllers/adminController");
 
-const {
-  verifyToken,
-  isAdmin,
-  isFinance,
-} = require("../middleware/authMiddleware");
 
-// ================= ADMIN ROUTES =================
+const { verifyToken, isAdmin } = require("../middleware/authMiddleware");
 
-// 🔐 Only admin/superadmin can view
-router.get("/", verifyToken, isAdmin, getAdmins);
+// ================= ADMIN =================
 
-// 🔐 Only superadmin can create admin
-router.post("/", verifyToken, isAdmin, createAdmin);
+// Get all admins
+router.get("/admins", verifyToken, isAdmin, getAdmins);
 
-// 🔐 Only admin/superadmin can delete
-router.delete("/:id", verifyToken, isAdmin, deleteAdmin);
+// Create admin
+router.post("/admins", verifyToken, isAdmin, createAdmin);
 
-// // ================= FINANCE =================
-// router.get("/finance", verifyToken, isFinance, getFinanceData);
+// Delete admin
+router.delete("/admins/:id", verifyToken, isAdmin, deleteAdmin);
+
+// ================= USERS =================
+
+// Get all users (for admin panel)
+router.get("/users", verifyToken, isAdmin, getUsers);
+
+// Block / Unblock user
+router.put("/users/:id/status", verifyToken, isAdmin, toggleUserStatus);
 
 module.exports = router;

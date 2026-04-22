@@ -1,16 +1,19 @@
 const express = require("express");
 const axios = require("axios");
+
 const router = express.Router();
 
-const { verifyToken, isUser  } = require("../middleware/authMiddleware");
-const { saveUserLocation } = require("../controllers/userController");
-const { updateUserProfile } = require("../controllers/userController")
+// Middleware
+const { verifyToken, isUser } = require("../middleware/authMiddleware");
 
+// Controllers
+const { saveUserLocation, updateUserProfile } = require("../controllers/userController");
+
+/* ===================================
+   📍 USER ROUTES
+=================================== */
 router.post("/save-location", verifyToken, saveUserLocation);
 router.put("/update-profile", verifyToken, isUser, updateUserProfile);
-
-
-
 
 /* ===================================
    🔎 SEARCH LOCATION
@@ -41,10 +44,10 @@ router.get("/search-location", async (req, res) => {
       }
     );
 
-    res.json(response.data);
+    return res.json(response.data);
   } catch (err) {
     console.error("Search error:", err.response?.data || err.message);
-    res.status(500).json({ message: "Search failed" });
+    return res.status(500).json({ message: "Search failed" });
   }
 });
 
@@ -83,23 +86,11 @@ router.get("/reverse-geocode", async (req, res) => {
       }
     );
 
-    res.json(response.data);
+    return res.json(response.data);
   } catch (err) {
     console.error("Reverse error:", err.response?.data || err.message);
-    res.status(500).json({ message: "Reverse geocode failed" });
+    return res.status(500).json({ message: "Reverse geocode failed" });
   }
 });
-
-
-
-
-module.exports = router;const express = require("express");
-const router = express.Router();
-
-const { getUsers } = require("../controllers/userController");
-const { verifyToken } = require("../middleware/authMiddleware");
-
-// 🔐 Protected
-router.get("/", verifyToken, getUsers);
 
 module.exports = router;

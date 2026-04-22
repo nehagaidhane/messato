@@ -95,13 +95,18 @@ exports.signupVendor = async (req, res) => {
 };
 
 // ═════════════════════════════════════════════════════════════
-// USER LOGIN  (+ Remember Me support)
+// USER / ADMIN LOGIN  (+ Remember Me support)
 // ═════════════════════════════════════════════════════════════
 exports.userLogin = async (req, res) => {
   try {
     const { email, password, rememberMe } = req.body;
 
+    if (!email || !password)
+      return res.status(400).json({ message: "Email and password required" });
+
     let user;
+    let userType = "user";
+    let role = "user";
 
     // 🔍 1. Check admins table first
     const [admins] = await db.query(
@@ -111,61 +116,149 @@ exports.userLogin = async (req, res) => {
 
     if (admins.length > 0) {
       user = admins[0];
+      userType = "admin";
+      role = user.role || "admin";
     } else {
       // 🔍 2. Then check users
-      const [users] = await db.query(
-        "SELECT * FROM users WHERE email = ?",
-        [email]
-      );
+   console.log("LOGIN BODY:", req.body);
+
+const [users] = await db.query(
+  "SELECT * FROM users WHERE email = ?",
+  [email]
+);
+
+console.log("FOUND USERS:", users);
 
       if (users.length === 0) {
         return res.status(400).json({ message: "User not found" });
       }
 
       user = users[0];
+      role = user.role || "user";
     }
 
     // 🔐 Password check
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
       return res.status(400).json({ message: "Invalid password" });
-    }
 
-    // 🚫 OPTIONAL: block inactive admins
+    // 🚫 OPTIONAL: block inactive accounts
     if (user.status === "inactive") {
       return res.status(403).json({ message: "Account inactive" });
     }
 
-    // 🔑 Token
+    const tokenPayload = { id: user.id, type: userType, role };
+
     const accessToken = jwt.sign(
-      { id: user.id, role: user.role },
+      tokenPayload,
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES }
     );
 
-    // Refresh token (optional)
     const refreshToken = jwt.sign(
-      { id: user.id },
+      tokenPayload,
       process.env.JWT_REFRESH_SECRET,
       { expiresIn: process.env.JWT_REFRESH_EXPIRES }
     );
 
-    res.cookie("refreshToken", refreshToken, {
+    const refreshCookieName = userType === "admin" ? "adminRefreshToken" : "refreshToken";
+
+    res.cookie(refreshCookieName, refreshToken, {
       httpOnly: true,
       secure: false,
       sameSite: "strict",
     });
 
-return res.json({
-  message: "Vendor login successful",
-  accessToken,
-  user: {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    type: "vendor",
-  },
-});
+    return res.json({
+      message: `${userType === "admin" ? "Admin" : "User"} login successful`,
+      accessToken,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        type: userType,
+        role,
+      },
+    });
+  } catch (err) {
+    console.error("User Login Error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ═════════════════════════════════════════════════════════════
+// VENDOR LOGIN
+// ═════════════════════════════════════════════════════════════
+exports.vendorLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password)
+      return res.status(400).json({ message: "Email and password required" });
+
+    console.log("LOGIN BODY:", req.body);
+
+    const [vendors] = await db.query(
+      "SELECT * FROM vendors WHERE email = ?",
+      [email]
+    );
+
+    console.log("FOUND VENDOR:", vendors);
+
+    if (vendors.length === 0)
+      return res.status(400).json({ message: "Vendor not found" });
+
+    const vendor = vendors[0];
+
+    const isMatch = await bcrypt.compare(password, vendor.password);
+    if (!isMatch)
+      return res.status(400).json({ message: "Invalid password" });
+
+    if (vendor.status === "inactive") {
+      return res.status(403).json({ message: "Account inactive" });
+    }
+
+    // ✅ NEW: fetch onboarding status
+    const [profile] = await db.query(
+      "SELECT status FROM vendor_profiles WHERE vendor_id = ?",
+      [vendor.id]
+    );
+
+    const onboardingStatus =
+      profile.length > 0 ? profile[0].status : "not_started";
+
+    const tokenPayload = { id: vendor.id, type: "vendor", role: "vendor" };
+
+    const accessToken = jwt.sign(
+      tokenPayload,
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES }
+    );
+
+    const refreshToken = jwt.sign(
+      tokenPayload,
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES }
+    );
+
+    res.cookie("vendorRefreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "strict",
+    });
+
+    return res.json({
+      message: "Vendor login successful",
+      accessToken,
+      user: {
+        id: vendor.id,
+        name: vendor.name,
+        email: vendor.email,
+        type: "vendor",
+      },
+      onboardingStatus, // ✅ NEW FIELD
+    });
+
   } catch (err) {
     console.error("Vendor Login Error:", err);
     return res.status(500).json({ message: "Server error" });
@@ -175,19 +268,31 @@ return res.json({
 // ═════════════════════════════════════════════════════════════
 // REFRESH TOKEN
 // ═════════════════════════════════════════════════════════════
-exports.refreshToken = (req, res) => {
-  const token = req.cookies?.refreshToken;
-  if (!token)
+const issueRefreshAccessToken = (req, res, cookieName) => {
+  const token = req.cookies?.[cookieName];
+  if (!token) {
     return res.status(401).json({ message: "No refresh token" });
+  }
 
   jwt.verify(token, process.env.JWT_REFRESH_SECRET, (err, user) => {
-    if (err)
+    if (err) {
       return res.status(403).json({ message: "Invalid refresh token" });
+    }
 
-    const newAccessToken = signToken(user.id, user.type);
+    const { id, type, role } = user;
+    const newAccessToken = jwt.sign(
+      { id, type, role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES }
+    );
+
     return res.json({ accessToken: newAccessToken });
   });
 };
+
+exports.refreshToken = (req, res) => issueRefreshAccessToken(req, res, "refreshToken");
+exports.refreshAdminToken = (req, res) => issueRefreshAccessToken(req, res, "adminRefreshToken");
+exports.refreshVendorToken = (req, res) => issueRefreshAccessToken(req, res, "vendorRefreshToken");
 
 // ═════════════════════════════════════════════════════════════
 // GOOGLE LOGIN
@@ -490,3 +595,4 @@ exports.resetPassword = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+

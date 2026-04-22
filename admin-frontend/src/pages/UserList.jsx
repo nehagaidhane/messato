@@ -1,5 +1,6 @@
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
+import { fetchWithAuth } from "../utils/api";
 import { useEffect, useState } from "react";
 import {
   SlidersHorizontal,
@@ -15,7 +16,9 @@ export default function UserList() {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [dark, setDark] = useState(() => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [dark] = useState(() => {
     return localStorage.getItem("theme") === "dark" ||
       (!localStorage.getItem("theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
   });
@@ -36,18 +39,31 @@ export default function UserList() {
     fetchUsers();
   }, []);
 
-  const fetchUsers = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/users", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setUsers(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error(err);
+const fetchUsers = async () => {
+  setLoading(true);
+  setError(null);
+
+  try {
+    const res = await fetchWithAuth("/admin/users");
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.log("ERROR RESPONSE:", text);
+      throw new Error(`API Error ${res.status}`);
     }
-  };
+
+    const data = await res.json();
+    console.log("DATA:", data);
+
+    setUsers(Array.isArray(data) ? data : []);
+
+  } catch (err) {
+    console.error(err);
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const filteredUsers = users.filter((u) =>
     u.name.toLowerCase().includes(search.toLowerCase())
@@ -57,15 +73,30 @@ export default function UserList() {
   const paginatedUsers = filteredUsers.slice(start, start + USERS_PER_PAGE);
   const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
 
-  const toggleStatus = (id) => {
+const toggleStatus = async (id) => {
+  try {
+    const res = await fetchWithAuth(`/admin/users/${id}/status`, {
+      method: "PUT",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message);
+    }
+
+    // ✅ update UI
     setUsers((prev) =>
       prev.map((u) =>
-        u.id === id
-          ? { ...u, status: u.status === "active" ? "blocked" : "active" }
-          : u
+        u.id === id ? { ...u, status: data.status } : u
       )
     );
-  };
+
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+};
 
   return (
     <div className="flex bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
@@ -86,6 +117,13 @@ export default function UserList() {
             </div>
           </div>
 
+          {/* ERROR MESSAGE */}
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg mb-5">
+              <strong>Error:</strong> {error}
+            </div>
+          )}
+
           {/* FILTER BAR */}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 flex flex-wrap items-center gap-3 mb-5 shadow-sm">
             <div className="flex items-center gap-2 text-gray-400 dark:text-gray-500 text-sm font-medium pr-3 border-r border-gray-200 dark:border-gray-700">
@@ -102,6 +140,12 @@ export default function UserList() {
                 className="bg-transparent outline-none text-gray-700 dark:text-gray-200 text-sm w-48 placeholder:text-gray-400"
               />
             </div>
+            <button
+              onClick={fetchUsers}
+              className="ml-auto px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition-colors"
+            >
+              Refresh
+            </button>
           </div>
 
           {/* TABLE */}
@@ -119,7 +163,13 @@ export default function UserList() {
               </thead>
 
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {paginatedUsers.length === 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan="6" className="text-center py-16 text-gray-400 dark:text-gray-500">
+                      <span>Loading users...</span>
+                    </td>
+                  </tr>
+                ) : paginatedUsers.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="text-center py-16 text-gray-400 dark:text-gray-500">
                       <div className="flex flex-col items-center gap-2">

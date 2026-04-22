@@ -93,35 +93,69 @@ const LoginScreen = ({ onForgotPassword }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+// ── In VendorLogin.jsx — replace handleLogin inside LoginScreen ──
+// After successful login, check onboarding status and route accordingly.
+
 const handleLogin = async (e) => {
   e.preventDefault();
   setError("");
   setLoading(true);
+
   try {
     const res = await fetch(`${API_BASE}/vendor/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, rememberMe }),
+      body: JSON.stringify({ email, password }),
+      credentials: "include",
     });
+
     const data = await res.json();
-    if (!res.ok) { setError(data.message); return; }
 
-    localStorage.setItem("accessToken", data.accessToken);
-    localStorage.setItem("userType", data.type);
-
-    if (!data.onboardingComplete) {
-      navigate("/vendor/onboarding");
-    } else if (data.isApproved) {
-      navigate("/vendor/dashboard");
-    } else {
-      navigate("/vendor/pending");
+    if (!res.ok) {
+      setError(data.message);
+      return;
     }
-  } catch {
+
+    console.log("LOGIN SUCCESS:", data);
+
+    // ✅ Save token
+    localStorage.setItem("accessToken", data.accessToken);
+    localStorage.setItem("userType", data.user.type);
+    localStorage.setItem("userEmail", data.user.email);
+
+    // ✅ CALL YOUR ONBOARDING API (THIS IS CORRECT NOW)
+    const statusRes = await fetch("http://localhost:5000/api/onboarding/status", {
+      headers: {
+        Authorization: `Bearer ${data.accessToken}`,
+      },
+    });
+
+    const statusData = await statusRes.json();
+
+    console.log("ONBOARDING STATUS:", statusData);
+
+    const status = statusData.status;
+
+    // ✅ REDIRECT BASED ON STATUS
+    if (status === "approved") {
+      navigate("/vendor/dashboard");
+    } else if (status === "pending") {
+      navigate("/vendor/pending");
+    } else if (status === "rejected") {
+      navigate("/vendor/rejected");
+    } else {
+      navigate("/vendor/onboarding"); // not_started
+    }
+
+  } catch (err) {
+    console.error(err);
     setError("Network error. Please try again.");
   } finally {
     setLoading(false);
   }
 };
+
+
 
 const handleGoogle = () => {
   setError("");

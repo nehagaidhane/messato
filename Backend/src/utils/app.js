@@ -26,9 +26,12 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 // Public Routes
 app.use("/api/upload", require("../routes/uploadRoutes"));
 app.use("/api/auth", require("../routes/authRoutes"));
-app.use("/api/vendors", require("../routes/VendorRoutes"));
-app.use("/api/menu", require("../routes/MenuRoutes"));
+app.use("/api/vendors", require("../routes/vendorRoutes"));
+app.use("/api/menu", require("../routes/menuRoutes"));
 app.use("/api/payment", require("../routes/paymentRoutes"));
+app.use("/api/onboarding", require("../routes/OnboardingRoutes"));
+app.use("/api/admin", require("../routes/adminRoutes"));
+
 
 // Protected Routes
 app.use("/api/user", require("../routes/userRoutes"));

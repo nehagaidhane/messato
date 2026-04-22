@@ -1,6 +1,12 @@
 const express = require("express");
 const router  = express.Router();
-const { db }  = require("../config/db");
+const { verifyToken, isAdmin, requireRole } = require("../middleware/authMiddleware");
+const {
+  getVendors,
+  getVendorById,
+  getVendorCounts,
+  updateVendorStatus,
+} = require("../controllers/vendorController");
 
 /* Haversine */
 function haversine(lat1, lon1, lat2, lon2) {
@@ -15,50 +21,75 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// GET /api/vendors/nearby
+// Public
 router.get("/nearby", async (req, res) => {
   const userLat = parseFloat(req.query.lat);
   const userLng = parseFloat(req.query.lng);
-  const tab     = req.query.tab || "popular";
-  const maxKm   = parseFloat(req.query.radius) || 5;
 
   if (isNaN(userLat) || isNaN(userLng)) {
-    return res.status(400).json({ error: "lat and lng are required" });
+    return res.status(400).json({ error: "lat and lng required" });
   }
 
   try {
-    const [rows] = await db.query(`SELECT * FROM vendor_profiles WHERE status='approved'`);
+      const [rows] = await db.query(`
+        SELECT
+          vp.*,
+          v.id    AS vendor_id,
+          v.name  AS vendor_name,
+          v.email AS vendor_email
+        FROM vendor_profiles vp
+        LEFT JOIN vendors v ON v.id = vp.vendor_id
+        WHERE vp.status = 'approved'
+      `);
 
-    const vendors = rows.map(v => ({
-      ...v,
-      distanceKm: haversine(userLat, userLng, v.latitude, v.longitude)
-    }));
+    let vendors = [];
 
-    res.json({ vendors });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+    for (let v of rows) {
+      const lat = Number(v.latitude);
+      const lng = Number(v.longitude);
 
-// ✅ NEW: GET /api/vendors/:vendorId
-router.get("/:vendorId", async (req, res) => {
-  const { vendorId } = req.params;
-  try {
-    const [rows] = await db.query(
-      "SELECT * FROM vendor_profiles WHERE id = ? LIMIT 1",
-      [vendorId]
-    );
+      // ✅ SAFE CHECK (MOST IMPORTANT FIX)
+      if (!lat || !lng || isNaN(lat) || isNaN(lng)) continue;
 
-    if (rows.length === 0) {
-      return res.status(404).json({ error: "Vendor not found" });
+      const distance = haversine(userLat, userLng, lat, lng);
+
+      if (isNaN(distance)) continue;
+
+      vendors.push({
+        ...v,
+        distance,
+      });
     }
 
-    res.json({ vendor: rows[0] });
+    let filtered = vendors.filter(v => v.distance <= 1);
+
+    if (!filtered.length) {
+      filtered = vendors.filter(v => v.distance <= 2);
+    }
+
+    res.json({
+      vendors: filtered.sort((a, b) => a.distance - b.distance),
+    });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("🔥 Nearby API Error:", err);
+    res.status(500).json({
+      error: "Internal server error",
+      details: err.message,
+    });
   }
 });
+router.get("/public", async (req, res) => {
+  const [vendors] = await db.query(`
+    SELECT * FROM vendor_profiles WHERE status='approved'
+  `);
+  res.json(vendors);
+});
+
+// IMPORTANT: /counts must come before /:id
+router.get("/counts",     verifyToken, isAdmin, getVendorCounts);
+router.get("/",           verifyToken, isAdmin, getVendors);
+router.get("/:id",        verifyToken, requireRole("admin", "user", "vendor"), getVendorById);
+router.put("/:id/status", verifyToken, isAdmin, updateVendorStatus);
 
 module.exports = router;

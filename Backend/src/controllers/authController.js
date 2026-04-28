@@ -8,6 +8,46 @@ const axios = require("axios");
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const isProduction = process.env.NODE_ENV === "production";
+const DEFAULT_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
+
+const parseExpiryToMs = (value, fallback = DEFAULT_REFRESH_MS) => {
+  if (!value || typeof value !== "string") return fallback;
+
+  const normalized = value.trim();
+  if (!normalized) return fallback;
+
+  const plainNumber = Number(normalized);
+  if (Number.isFinite(plainNumber) && plainNumber > 0) {
+    return plainNumber * 1000;
+  }
+
+  const match = normalized.match(/^(\d+)([smhdw])$/i);
+  if (!match) return fallback;
+
+  const amount = Number(match[1]);
+  const unit = match[2].toLowerCase();
+  const unitToMs = {
+    s: 1000,
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000,
+    w: 7 * 24 * 60 * 60 * 1000,
+  };
+
+  return amount * (unitToMs[unit] || 1000);
+};
+
+const REFRESH_COOKIE_MAX_AGE = parseExpiryToMs(process.env.JWT_REFRESH_EXPIRES);
+
+const buildRefreshCookieOptions = () => ({
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax",
+  maxAge: REFRESH_COOKIE_MAX_AGE,
+  path: "/api/auth",
+});
+
 // ─────────────────────────────────────────────────────────────
 // Nodemailer transporter  (configure your SMTP in .env)
 // ─────────────────────────────────────────────────────────────
@@ -163,11 +203,7 @@ console.log("FOUND USERS:", users);
 
     const refreshCookieName = userType === "admin" ? "adminRefreshToken" : "refreshToken";
 
-    res.cookie(refreshCookieName, refreshToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "strict",
-    });
+    res.cookie(refreshCookieName, refreshToken, buildRefreshCookieOptions());
 
     return res.json({
       message: `${userType === "admin" ? "Admin" : "User"} login successful`,
@@ -191,7 +227,7 @@ console.log("FOUND USERS:", users);
 // ═════════════════════════════════════════════════════════════
 exports.vendorLogin = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
 
     if (!email || !password)
       return res.status(400).json({ message: "Email and password required" });
@@ -241,11 +277,7 @@ exports.vendorLogin = async (req, res) => {
       { expiresIn: process.env.JWT_REFRESH_EXPIRES }
     );
 
-    res.cookie("vendorRefreshToken", refreshToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "strict",
-    });
+    res.cookie("vendorRefreshToken", refreshToken, buildRefreshCookieOptions());
 
     return res.json({
       message: "Vendor login successful",
@@ -256,6 +288,7 @@ exports.vendorLogin = async (req, res) => {
         email: vendor.email,
         type: "vendor",
       },
+      rememberMe: Boolean(rememberMe),
       onboardingStatus, // ✅ NEW FIELD
     });
 
@@ -268,7 +301,7 @@ exports.vendorLogin = async (req, res) => {
 // ═════════════════════════════════════════════════════════════
 // REFRESH TOKEN
 // ═════════════════════════════════════════════════════════════
-const issueRefreshAccessToken = (req, res, cookieName) => {
+const issueRefreshAccessToken = (req, res, cookieName, expectedType) => {
   const token = req.cookies?.[cookieName];
   if (!token) {
     return res.status(401).json({ message: "No refresh token" });
@@ -280,19 +313,51 @@ const issueRefreshAccessToken = (req, res, cookieName) => {
     }
 
     const { id, type, role } = user;
+
+    if (expectedType && type !== expectedType) {
+      return res.status(403).json({ message: "Invalid refresh token type" });
+    }
+
     const newAccessToken = jwt.sign(
       { id, type, role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES }
     );
 
+    const rotatedRefreshToken = jwt.sign(
+      { id, type, role },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES }
+    );
+
+    res.cookie(cookieName, rotatedRefreshToken, buildRefreshCookieOptions());
+
     return res.json({ accessToken: newAccessToken });
   });
 };
 
-exports.refreshToken = (req, res) => issueRefreshAccessToken(req, res, "refreshToken");
-exports.refreshAdminToken = (req, res) => issueRefreshAccessToken(req, res, "adminRefreshToken");
-exports.refreshVendorToken = (req, res) => issueRefreshAccessToken(req, res, "vendorRefreshToken");
+exports.refreshToken = (req, res) => issueRefreshAccessToken(req, res, "refreshToken", "user");
+exports.refreshAdminToken = (req, res) => issueRefreshAccessToken(req, res, "adminRefreshToken", "admin");
+exports.refreshVendorToken = (req, res) => issueRefreshAccessToken(req, res, "vendorRefreshToken", "vendor");
+exports.userLogout = (req, res) => {
+  res.clearCookie("refreshToken", {
+    path: "/api/auth",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  });
+
+  return res.json({ message: "User logout successful" });
+};
+
+exports.vendorLogout = (req, res) => {
+  res.clearCookie("vendorRefreshToken", {
+    path: "/api/auth",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  });
+
+  return res.json({ message: "Vendor logout successful" });
+};
 
 // ═════════════════════════════════════════════════════════════
 // GOOGLE LOGIN

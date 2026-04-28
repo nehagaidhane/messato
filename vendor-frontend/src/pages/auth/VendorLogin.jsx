@@ -2,17 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./VendorLogin.css";
 import logo from "../../assets/Group 37.png";
-
-const API_BASE = "http://localhost:5000/api/auth";
+import api from "../../api/axios";
 
 // ── Messato Logo ──────────────────────────────────────────────
 const MessatoLogo = () => (
   <div className="vl-logo-wrap">
-    <img 
-      src={logo} 
-      alt="Messato" 
-      className="vl-logo-img"
-    />
+    <img src={logo} alt="Messato" className="vl-logo-img" />
   </div>
 );
 
@@ -42,7 +37,6 @@ const AppleIcon = () => (
 
 // ─────────────────────────────────────────────
 // Google OAuth — loads GSI script and triggers popup
-// Requires VITE_GOOGLE_CLIENT_ID in your .env file
 // ─────────────────────────────────────────────
 const loadGoogleScript = () =>
   new Promise((resolve) => {
@@ -62,16 +56,13 @@ const triggerGoogleLogin = async (onSuccess, onError) => {
       client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
       callback: async (response) => {
         try {
-          const res = await fetch(`${API_BASE}/google-login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token: response.credential }),
+          // ✅ Using axios (api) instead of fetch
+          const res = await api.post("/auth/google-login", {
+            token: response.credential,
           });
-          const data = await res.json();
-          if (!res.ok) return onError(data.message || "Google login failed");
-          onSuccess(data);
-        } catch {
-          onError("Network error during Google login");
+          onSuccess(res.data);
+        } catch (err) {
+          onError(err.response?.data?.message || "Google login failed");
         }
       },
     });
@@ -93,90 +84,86 @@ const LoginScreen = ({ onForgotPassword }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-// ── In VendorLogin.jsx — replace handleLogin inside LoginScreen ──
-// After successful login, check onboarding status and route accordingly.
+  // ✅ useEffect is now INSIDE the component (was outside before — that's a React rules violation)
+  useEffect(() => {
+    const token =
+      localStorage.getItem("accessToken") ||
+      sessionStorage.getItem("accessToken");
 
-const handleLogin = async (e) => {
-  e.preventDefault();
-  setError("");
-  setLoading(true);
-
-  try {
-    const res = await fetch(`${API_BASE}/vendor/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-      credentials: "include",
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      setError(data.message);
-      return;
-    }
-
-    console.log("LOGIN SUCCESS:", data);
-
-    // ✅ Save token
-    localStorage.setItem("accessToken", data.accessToken);
-    localStorage.setItem("userType", data.user.type);
-    localStorage.setItem("userEmail", data.user.email);
-
-    // ✅ CALL YOUR ONBOARDING API (THIS IS CORRECT NOW)
-    const statusRes = await fetch("http://localhost:5000/api/onboarding/status", {
-      headers: {
-        Authorization: `Bearer ${data.accessToken}`,
-      },
-    });
-
-    const statusData = await statusRes.json();
-
-    console.log("ONBOARDING STATUS:", statusData);
-
-    const status = statusData.status;
-
-    // ✅ REDIRECT BASED ON STATUS
-    if (status === "approved") {
+    if (token) {
+      // Already logged in — redirect away from login page
       navigate("/vendor/dashboard");
-    } else if (status === "pending") {
-      navigate("/vendor/pending");
-    } else if (status === "rejected") {
-      navigate("/vendor/rejected");
-    } else {
-      navigate("/vendor/onboarding"); // not_started
     }
+  }, [navigate]);
 
-  } catch (err) {
-    console.error(err);
-    setError("Network error. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
+    try {
+      // ✅ Pure axios call — no fetch, no res.json(), no manual headers
+      const res = await api.post("/auth/vendor/login", { email, password, rememberMe });
+      const data = res.data;
 
+      console.log("LOGIN SUCCESS:", data);
 
-const handleGoogle = () => {
-  setError("");
-  triggerGoogleLogin(
-    (data) => {
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("userType", data.type);
-
-      if (!data.onboardingComplete) {
-        navigate("/vendor/onboarding");
-      } else if (data.isApproved) {
-        navigate("/vendor/dashboard");
+      // ✅ Save token in the selected storage
+      if (rememberMe) {
+        localStorage.setItem("accessToken", data.accessToken);
+        sessionStorage.removeItem("accessToken");
       } else {
-        navigate("/vendor/pending");
+        sessionStorage.setItem("accessToken", data.accessToken);
+        localStorage.removeItem("accessToken");
       }
-    },
-    (msg) => setError(msg)
-  );
-};
+      localStorage.setItem("userType", data.user.type);
+      localStorage.setItem("userEmail", data.user.email);
 
- return (
+      // ✅ Onboarding status check — token is now auto-attached by axios interceptor
+      const statusRes = await api.get("/onboarding/status");
+      const status = statusRes.data.status;
+
+      console.log("ONBOARDING STATUS:", status);
+
+      // ✅ Redirect based on status
+      if (status === "approved") {
+        navigate("/vendor/dashboard");
+      } else if (status === "pending") {
+        navigate("/vendor/pending");
+      } else if (status === "rejected") {
+        navigate("/vendor/rejected");
+      } else {
+        navigate("/vendor/onboarding"); // not_started
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogle = () => {
+    setError("");
+    triggerGoogleLogin(
+      (data) => {
+        localStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("userType", data.type);
+        sessionStorage.removeItem("accessToken");
+
+        if (!data.onboardingComplete) {
+          navigate("/vendor/onboarding");
+        } else if (data.isApproved) {
+          navigate("/vendor/dashboard");
+        } else {
+          navigate("/vendor/pending");
+        }
+      },
+      (msg) => setError(msg)
+    );
+  };
+
+  return (
     <form onSubmit={handleLogin} className="vl-card">
       <MessatoLogo />
       <h2 className="vl-title">Log In</h2>
@@ -186,16 +173,23 @@ const handleGoogle = () => {
 
       <label className="vl-label">EMAIL</label>
       <input
-        type="email" placeholder="example@gmail.com" value={email}
-        onChange={(e) => setEmail(e.target.value)} className="vl-input" required
+        type="email"
+        placeholder="example@gmail.com"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="vl-input"
+        required
       />
 
       <label className="vl-label">PASSWORD</label>
       <div className="vl-pass-wrap">
         <input
-          type={showPass ? "text" : "password"} placeholder="••••••••••"
-          value={password} onChange={(e) => setPassword(e.target.value)}
-          className="vl-input" required
+          type={showPass ? "text" : "password"}
+          placeholder="••••••••••"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="vl-input"
+          required
         />
         <button type="button" onClick={() => setShowPass((v) => !v)} className="vl-eye-btn">
           {showPass ? "🙈" : "👁️"}
@@ -205,7 +199,8 @@ const handleGoogle = () => {
       <div className="vl-row">
         <label className="vl-remember-label">
           <input
-            type="checkbox" checked={rememberMe}
+            type="checkbox"
+            checked={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}
           />
           Remember me
@@ -256,16 +251,11 @@ const ForgotPasswordScreen = ({ onBack, onOtpSent }) => {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.message); return; }
+      // ✅ axios instead of fetch
+      await api.post("/auth/forgot-password", { email });
       onOtpSent(email);
-    } catch {
-      setError("Network error. Please try again.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -282,8 +272,12 @@ const ForgotPasswordScreen = ({ onBack, onOtpSent }) => {
 
       <label className="vl-label">EMAIL</label>
       <input
-        type="email" placeholder="example@gmail.com" value={email}
-        onChange={(e) => setEmail(e.target.value)} className="vl-input" required
+        type="email"
+        placeholder="example@gmail.com"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="vl-input"
+        required
       />
 
       <button type="submit" className="vl-primary-btn" style={{ marginTop: 24 }} disabled={loading}>
@@ -330,16 +324,11 @@ const VerifyScreen = ({ email, onBack, onVerified }) => {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/verify-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp: code }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.message); return; }
+      // ✅ axios instead of fetch
+      await api.post("/auth/verify-otp", { email, otp: code });
       onVerified(email, code);
-    } catch {
-      setError("Network error. Please try again.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -347,12 +336,12 @@ const VerifyScreen = ({ email, onBack, onVerified }) => {
 
   const handleResend = async () => {
     if (resendTimer > 0) return;
-    await fetch(`${API_BASE}/forgot-password`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-    setResendTimer(50);
+    try {
+      await api.post("/auth/forgot-password", { email });
+      setResendTimer(50);
+    } catch {
+      // silently fail — user can retry
+    }
   };
 
   return (
@@ -381,8 +370,12 @@ const VerifyScreen = ({ email, onBack, onVerified }) => {
       <div className="vl-otp-row">
         {otp.map((digit, i) => (
           <input
-            key={i} ref={inputRefs[i]}
-            type="text" inputMode="numeric" maxLength={1} value={digit}
+            key={i}
+            ref={inputRefs[i]}
+            type="text"
+            inputMode="numeric"
+            maxLength={1}
+            value={digit}
             onChange={(e) => handleChange(i, e.target.value)}
             onKeyDown={(e) => handleKeyDown(i, e)}
             className="vl-otp-input"
@@ -414,16 +407,16 @@ const ResetPasswordScreen = ({ email, otp, onSuccess }) => {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp, newPassword, confirmPassword }),
+      // ✅ axios instead of fetch
+      await api.post("/auth/reset-password", {
+        email,
+        otp,
+        newPassword,
+        confirmPassword,
       });
-      const data = await res.json();
-      if (!res.ok) { setError(data.message); return; }
       onSuccess();
-    } catch {
-      setError("Network error. Please try again.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -440,9 +433,12 @@ const ResetPasswordScreen = ({ email, otp, onSuccess }) => {
       <label className="vl-label">NEW PASSWORD</label>
       <div className="vl-pass-wrap">
         <input
-          type={showNew ? "text" : "password"} placeholder="••••••••••"
-          value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-          className="vl-input" required
+          type={showNew ? "text" : "password"}
+          placeholder="••••••••••"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          className="vl-input"
+          required
         />
         <button type="button" onClick={() => setShowNew((v) => !v)} className="vl-eye-btn">
           {showNew ? "🙈" : "👁️"}
@@ -452,9 +448,12 @@ const ResetPasswordScreen = ({ email, otp, onSuccess }) => {
       <label className="vl-label vl-label-mt">CONFIRM PASSWORD</label>
       <div className="vl-pass-wrap">
         <input
-          type={showConfirm ? "text" : "password"} placeholder="••••••••••"
-          value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-          className="vl-input" required
+          type={showConfirm ? "text" : "password"}
+          placeholder="••••••••••"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          className="vl-input"
+          required
         />
         <button type="button" onClick={() => setShowConfirm((v) => !v)} className="vl-eye-btn">
           {showConfirm ? "🙈" : "👁️"}

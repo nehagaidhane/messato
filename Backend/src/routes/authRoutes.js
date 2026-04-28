@@ -9,6 +9,8 @@ const {
   refreshToken,
   refreshAdminToken,
   refreshVendorToken,
+  userLogout,
+  vendorLogout,
   googleLogin,
   facebookLogin,
   appleLogin,
@@ -39,6 +41,8 @@ router.post("/reset-password",  resetPassword);
 router.get("/refresh", refreshToken);
 router.get("/refresh-admin", refreshAdminToken);
 router.get("/refresh-vendor", refreshVendorToken);
+router.post("/logout", userLogout);
+router.post("/vendor/logout", vendorLogout);
 
 // ── Protected test routes ────────────────────────────────────
 router.get("/protected",   verifyToken,           (req, res) => res.json({ message: "Protected route accessed", user: req.user }));

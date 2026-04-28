@@ -2,14 +2,7 @@ import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { FaSearch, FaStar, FaCheckCircle, FaTimesCircle, FaFileAlt, FaUniversity, FaIdCard, FaPhone, FaMapMarkerAlt, FaCalendarAlt, FaUtensils, FaClock, FaChevronRight, FaTimes, FaDownload, FaEye } from "react-icons/fa";
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
-
-const API = axios.create({ baseURL: "http://localhost:5000", timeout: 10000 });
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+import { fetchWithAuth } from "../utils/api";
 
 // ── Approval Letter Component (shown in modal, printable) ─────────────────────
 function ApprovalLetter({ vendor, onClose }) {
@@ -186,8 +179,12 @@ function VendorDrawer({ vendorId, onClose, onStatusUpdate }) {
   useEffect(() => {
     if (!vendorId) return;
     let isActive = true;
-    API.get(`/api/vendors/${vendorId}`)
-      .then(res => { if (isActive) setVendor(res.data.vendor); })
+    fetchWithAuth(`/vendors/${vendorId}`)
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Failed to load vendor details");
+        const data = await res.json();
+        if (isActive) setVendor(data.vendor);
+      })
       .catch(() => { if (isActive) setVendor(null); })
       .finally(() => { if (isActive) setLoading(false); });
     return () => { isActive = false; };
@@ -196,7 +193,11 @@ function VendorDrawer({ vendorId, onClose, onStatusUpdate }) {
   const handleApprove = async () => {
     setActionLoading(true);
     try {
-      await API.put(`/api/vendors/${vendorId}/status`, { status: "approved" });
+      const res = await fetchWithAuth(`/vendors/${vendorId}/status`, {
+        method: "PUT",
+        body: JSON.stringify({ status: "approved" }),
+      });
+      if (!res.ok) throw new Error("Failed to approve vendor");
       setVendor(v => ({ ...v, status: "approved" }));
       onStatusUpdate(vendorId, "approved");
       setShowLetter(true);
@@ -208,7 +209,11 @@ function VendorDrawer({ vendorId, onClose, onStatusUpdate }) {
     if (!rejectReason.trim()) { alert("Please enter a rejection reason."); return; }
     setActionLoading(true);
     try {
-      await API.put(`/api/vendors/${vendorId}/status`, { status: "rejected", rejection_reason: rejectReason });
+      const res = await fetchWithAuth(`/vendors/${vendorId}/status`, {
+        method: "PUT",
+        body: JSON.stringify({ status: "rejected", rejection_reason: rejectReason }),
+      });
+      if (!res.ok) throw new Error("Failed to reject vendor");
       setVendor(v => ({ ...v, status: "rejected", rejection_reason: rejectReason }));
       onStatusUpdate(vendorId, "rejected");
       setShowRejectModal(false);
@@ -650,21 +655,25 @@ export default function VendorList() {
     setError(null);
     try {
       console.log("Fetching vendors...");
-      const vendorRes = await API.get("/api/admin/vendors");
-      console.log("Response:", vendorRes.data);
+      const vendorRes = await fetchWithAuth("/admin/vendors");
+      if (!vendorRes.ok) throw new Error(`API Error ${vendorRes.status}`);
+      const vendorData = await vendorRes.json();
+      console.log("Response:", vendorData);
       
-      const data = Array.isArray(vendorRes.data) 
-        ? vendorRes.data 
-        : (vendorRes.data?.vendors ?? []);
+      const data = Array.isArray(vendorData)
+        ? vendorData
+        : (vendorData?.vendors ?? []);
       
       console.log("Vendors data:", data);
       setAllVendors(data);
 
       // Try to get counts
       try {
-        const countRes = await API.get("/api/admin/vendors/counts");
-        console.log("Counts:", countRes.data);
-        setCounts(countRes.data);
+        const countRes = await fetchWithAuth("/admin/vendors/counts");
+        if (!countRes.ok) throw new Error(`API Error ${countRes.status}`);
+        const countData = await countRes.json();
+        console.log("Counts:", countData);
+        setCounts(countData);
       } catch {
         // Fallback: calculate counts
         setCounts({

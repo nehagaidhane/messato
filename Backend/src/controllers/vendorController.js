@@ -216,15 +216,15 @@ exports.updateVendorStatus = async (req, res) => {
       // Create vendor profile if it doesn't exist
       console.log(`Creating new vendor profile for vendor ${id}`);
       await db.query(
-        `INSERT INTO vendor_profiles (vendor_id, status, rejection_reason, created_at, updated_at)
-         VALUES (?, ?, ?, NOW(), NOW())`,
+        `INSERT INTO vendor_profiles (vendor_id, status, rejection_reason, created_at)
+         VALUES (?, ?, ?, NOW())`,
         [id, status, reason]
       );
     } else {
       // Update existing profile
       const [result] = await db.query(
         `UPDATE vendor_profiles
-         SET status = ?, rejection_reason = ?, updated_at = NOW()
+         SET status = ?, rejection_reason = ?
          WHERE vendor_id = ?`,
         [status, reason, id]
       );

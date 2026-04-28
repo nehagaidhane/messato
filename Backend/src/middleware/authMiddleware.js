@@ -15,7 +15,12 @@ const verifyToken = (req, res, next) => {
 
     console.log("✅ TOKEN VERIFIED:", decoded);
 
-    req.user = decoded; // { id, role, type }
+    req.user = decoded;
+
+    // ✅ IMPORTANT ADDITION (no logic change)
+    req.userId = decoded.id;         // universal
+    req.vendorId = decoded.id;       // for vendor APIs (shortcut)
+
     next();
 
   } catch (err) {
@@ -36,7 +41,6 @@ const requireRole = (...roles) => {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    // check both type & role safely
     const userRole = req.user.role || req.user.type;
 
     if (!roles.includes(userRole)) {
@@ -49,13 +53,8 @@ const requireRole = (...roles) => {
 
 // ================= ROLE MIDDLEWARE =================
 
-// ✅ ADMIN
 const isAdmin = (req, res, next) => {
-  console.log("👤 USER:", req.user);
-
-  if (!req.user) {
-    return res.status(403).json({ message: "Unauthorized" });
-  }
+  if (!req.user) return res.status(403).json({ message: "Unauthorized" });
 
   const role = req.user.role || req.user.type;
 
@@ -66,7 +65,6 @@ const isAdmin = (req, res, next) => {
   next();
 };
 
-// ✅ USER
 const isUser = (req, res, next) => {
   if (!req.user || (req.user.type !== "user" && req.user.role !== "user")) {
     return res.status(403).json({ message: "User only access" });
@@ -74,7 +72,6 @@ const isUser = (req, res, next) => {
   next();
 };
 
-// ✅ VENDOR
 const isVendor = (req, res, next) => {
   if (!req.user || (req.user.type !== "vendor" && req.user.role !== "vendor")) {
     return res.status(403).json({ message: "Vendor only access" });
@@ -82,7 +79,6 @@ const isVendor = (req, res, next) => {
   next();
 };
 
-// ✅ SUPPORT
 const isSupport = (req, res, next) => {
   if (!req.user || req.user.role !== "support") {
     return res.status(403).json({ message: "Support only" });
@@ -90,7 +86,6 @@ const isSupport = (req, res, next) => {
   next();
 };
 
-// ✅ FINANCE
 const isFinance = (req, res, next) => {
   if (!req.user || req.user.role !== "finance") {
     return res.status(403).json({ message: "Finance only" });

@@ -2,58 +2,54 @@
 
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-
-const API = "http://localhost:5000/api/onboarding";
+import api from "../../api/axios";
 
 export default function ProtectedVendorRoute({ children }) {
-  const [state, setState] = useState("loading"); // loading | ok | redirect
-  const [redirectTo, setRedirectTo] = useState(null);
+  const token = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
+  const userType = localStorage.getItem("userType");
+  const initialRedirectTo = !token || userType !== "vendor" ? "/login" : null;
+
+  const [state, setState] = useState(initialRedirectTo ? "redirect" : "loading"); // loading | ok | redirect
+  const [redirectTo, setRedirectTo] = useState(initialRedirectTo);
   const location = useLocation();
 
   useEffect(() => {
-  const token = localStorage.getItem("accessToken");
+    if (initialRedirectTo) return;
 
-  if (!token) {
-    setRedirectTo("/login");
-    setState("redirect");
-    return;
-  }
+    api
+      .get("/onboarding/status")
+      .then((res) => {
+        const status = res.data?.status;
 
-  const userType = localStorage.getItem("userType");
+        console.log("STATUS:", status);
 
-  if (userType !== "vendor") {
-    setRedirectTo("/login");
-    setState("redirect");
-    return;
-  }
+        if (status === "approved") {
+          setState("ok");
+        } else if (status === "pending") {
+          setRedirectTo("/vendor/pending");
+          setState("redirect");
+        } else if (status === "rejected") {
+          setRedirectTo("/vendor/rejected");
+          setState("redirect");
+        } else {
+          setRedirectTo("/vendor/onboarding"); // not_started
+          setState("redirect");
+        }
+      })
+      .catch((err) => {
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          localStorage.removeItem("accessToken");
+          sessionStorage.removeItem("accessToken");
+          localStorage.removeItem("userType");
+          setRedirectTo("/login");
+          setState("redirect");
+          return;
+        }
 
-  fetch(`${API}/status`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-    .then(r => r.json())
-    .then(data => {
-      const status = data.status;
-
-      console.log("STATUS:", status);
-
-      if (status === "approved") {
         setState("ok");
-      } else if (status === "pending") {
-        setRedirectTo("/vendor/pending");
-        setState("redirect");
-      } else if (status === "rejected") {
-        setRedirectTo("/vendor/rejected");
-        setState("redirect");
-      } else {
-        setRedirectTo("/vendor/onboarding"); // not_started
-        setState("redirect");
-      }
-    })
-    .catch(() => {
-      setState("ok");
-    });
+      });
 
-}, []);
+  }, [initialRedirectTo, token]);
 
   if (state === "loading") {
     return (

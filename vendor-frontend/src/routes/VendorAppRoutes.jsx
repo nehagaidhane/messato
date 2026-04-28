@@ -7,6 +7,10 @@ import Onboarding from "../pages/Dashboard/Onboarding";
 import VendorOnboarding from "../pages/Dashboard/VendorOnboarding";
 import ProtectedVendorRoute from "../pages/Dashboard/ProtectedVendorRoute";
 import VendorDashboard from "../pages/Dashboard/VendorDashboard";
+import Privacy from "../pages/Dashboard/Privacy";
+import FAQ from "../pages/Dashboard/FAQ";
+import Terms from "../pages/Dashboard/Terms";
+import SupportPage from "../pages/Dashboard/Contactsupport";
 
 // 👉 Create these pages (simple for now)
 const Pending = () => <h2>⏳ Your request is under review</h2>;
@@ -58,6 +62,14 @@ const AppRoutes = () => {
           </ProtectedVendorRoute>
         }
       />
+      <Route path="/vendor/dashboard/privacy" element={<Privacy />} />
+      <Route path="/vendor/dashboard/faq" element={<FAQ />} />
+      <Route path="/vendor/dashboard/terms" element={<Terms />} />
+      <Route path="/vendor/dashboard/customersupport" element={<SupportPage />} />
+
+
+       
+
 
     </Routes>
   );

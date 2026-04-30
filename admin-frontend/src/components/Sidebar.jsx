@@ -11,10 +11,29 @@ import {
   BarChart3,
   ChevronLeft,
   Menu,
+  Package,
+  DollarSign,
+  RotateCcw,
+  Receipt,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { FaBox } from "react-icons/fa";
+
 
 export default function Sidebar() {
+  // inside component
+const user = JSON.parse(localStorage.getItem("user"));
+const role = user?.role;
+
+const navigate = useNavigate();
+
+const handleLogout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+
+  navigate("/login");
+};
   const [collapsed, setCollapsed] = useState(false);
 
   // 💾 persist state
@@ -27,7 +46,25 @@ export default function Sidebar() {
     localStorage.setItem("sidebar", collapsed ? "collapsed" : "open");
   }, [collapsed]);
 
-  const menuItems = [
+// 🔐 ROLE-BASED MENUS
+const roleMenus = {
+  support: [
+    { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+    { icon: ClipboardList, label: "Complaints", path: "/complaints" },
+    { icon: BarChart3, label: "Orders", path: "/orders" },
+    { icon: Users, label: "User", path: "/users" },
+    { icon: Store, label: "Vendor", path: "/vendor" },
+  ],
+
+  finance: [
+    { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+    { icon: Users, label: "User", path: "/users" },
+    { icon: Store, label: "Vendor", path: "/vendor" },
+    { icon: ClipboardList, label: "Subscription", path: "/subscription" },
+    { icon: BarChart3, label: "Report", path: "/report" },
+  ],
+
+  admin: [
     { icon: LayoutDashboard, label: "Dashboard", path: "/" },
     { icon: Users, label: "User", path: "/users" },
     { icon: Store, label: "Vendor", path: "/vendor" },
@@ -35,7 +72,20 @@ export default function Sidebar() {
     { icon: Shield, label: "Admin Role", path: "/admin-role" },
     { icon: Image, label: "Content & Banner", path: "/content" },
     { icon: BarChart3, label: "Report", path: "/report" },
-  ];
+  ],
+finance: [
+  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: Package, label: "Orders", path: "/orders" },
+  { icon: Store, label: "Vendor", path: "/vendor" },
+  { icon: DollarSign, label: "Commission", path: "/commission" },
+  { icon: RotateCcw, label: "Refund", path: "/refund" },
+  { icon: Receipt, label: "Taxes", path: "/taxes" },
+  { icon: BarChart3, label: "Report", path: "/report" },
+],
+};
+
+// 👉 Pick menu based on role
+const menuItems = roleMenus[role] || [];
 
   return (
     <div
@@ -125,16 +175,19 @@ export default function Sidebar() {
           )}
         </div>
 
-        <div className="group relative flex items-center gap-3 px-3 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer">
-          <LogOut size={20} />
-          {!collapsed && "Logout"}
+<div
+  onClick={handleLogout}
+  className="group relative flex items-center gap-3 px-3 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg cursor-pointer"
+>
+  <LogOut size={20} />
+  {!collapsed && "Logout"}
 
-          {collapsed && (
-            <span className="absolute left-14 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
-              Logout
-            </span>
-          )}
-        </div>
+  {collapsed && (
+    <span className="absolute left-14 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
+      Logout
+    </span>
+  )}
+</div>
 
       </div>
     </div>

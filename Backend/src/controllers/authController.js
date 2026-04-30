@@ -8,6 +8,46 @@ const axios = require("axios");
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const isProduction = process.env.NODE_ENV === "production";
+const DEFAULT_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
+
+const parseExpiryToMs = (value, fallback = DEFAULT_REFRESH_MS) => {
+  if (!value || typeof value !== "string") return fallback;
+
+  const normalized = value.trim();
+  if (!normalized) return fallback;
+
+  const plainNumber = Number(normalized);
+  if (Number.isFinite(plainNumber) && plainNumber > 0) {
+    return plainNumber * 1000;
+  }
+
+  const match = normalized.match(/^(\d+)([smhdw])$/i);
+  if (!match) return fallback;
+
+  const amount = Number(match[1]);
+  const unit = match[2].toLowerCase();
+  const unitToMs = {
+    s: 1000,
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000,
+    w: 7 * 24 * 60 * 60 * 1000,
+  };
+
+  return amount * (unitToMs[unit] || 1000);
+};
+
+const REFRESH_COOKIE_MAX_AGE = parseExpiryToMs(process.env.JWT_REFRESH_EXPIRES);
+
+const buildRefreshCookieOptions = () => ({
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax",
+  maxAge: REFRESH_COOKIE_MAX_AGE,
+  path: "/api/auth",
+});
+
 // ─────────────────────────────────────────────────────────────
 // Nodemailer transporter  (configure your SMTP in .env)
 // ─────────────────────────────────────────────────────────────
@@ -95,35 +135,86 @@ exports.signupVendor = async (req, res) => {
 };
 
 // ═════════════════════════════════════════════════════════════
-// USER LOGIN  (+ Remember Me support)
+// USER / ADMIN LOGIN  (+ Remember Me support)
 // ═════════════════════════════════════════════════════════════
 exports.userLogin = async (req, res) => {
   try {
     const { email, password, rememberMe } = req.body;
 
-    const [users] = await db.query(
-      "SELECT * FROM users WHERE email = ?", [email]
+    if (!email || !password)
+      return res.status(400).json({ message: "Email and password required" });
+
+    let user;
+    let userType = "user";
+    let role = "user";
+
+    // 🔍 1. Check admins table first
+    const [admins] = await db.query(
+      "SELECT * FROM admins WHERE email = ?",
+      [email]
     );
-    if (users.length === 0)
-      return res.status(400).json({ message: "User not found" });
 
-    const user = users[0];
+    if (admins.length > 0) {
+      user = admins[0];
+      userType = "admin";
+      role = user.role || "admin";
+    } else {
+      // 🔍 2. Then check users
+   console.log("LOGIN BODY:", req.body);
 
-    if (!user.password)
-      return res.status(400).json({ message: "Please login using Google or Facebook" });
+const [users] = await db.query(
+  "SELECT * FROM users WHERE email = ?",
+  [email]
+);
 
+console.log("FOUND USERS:", users);
+
+      if (users.length === 0) {
+        return res.status(400).json({ message: "User not found" });
+      }
+
+      user = users[0];
+      role = user.role || "user";
+    }
+
+    // 🔐 Password check
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
       return res.status(400).json({ message: "Invalid password" });
 
-    // rememberMe = true  → 30-day token
-    // rememberMe = false → default short expiry from .env
-    const accessToken = signToken(user.id, "user", !!rememberMe);
+    // 🚫 OPTIONAL: block inactive accounts
+    if (user.status === "inactive") {
+      return res.status(403).json({ message: "Account inactive" });
+    }
+
+    const tokenPayload = { id: user.id, type: userType, role };
+
+    const accessToken = jwt.sign(
+      tokenPayload,
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES }
+    );
+
+    const refreshToken = jwt.sign(
+      tokenPayload,
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES }
+    );
+
+    const refreshCookieName = userType === "admin" ? "adminRefreshToken" : "refreshToken";
+
+    res.cookie(refreshCookieName, refreshToken, buildRefreshCookieOptions());
 
     return res.json({
-      message: "User login successful",
+      message: `${userType === "admin" ? "Admin" : "User"} login successful`,
       accessToken,
-      type: "user",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        type: userType,
+        role,
+      },
     });
   } catch (err) {
     console.error("User Login Error:", err);
@@ -136,11 +227,20 @@ exports.userLogin = async (req, res) => {
 // ═════════════════════════════════════════════════════════════
 exports.vendorLogin = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
+
+    if (!email || !password)
+      return res.status(400).json({ message: "Email and password required" });
+
+    console.log("LOGIN BODY:", req.body);
 
     const [vendors] = await db.query(
-      "SELECT * FROM vendors WHERE email = ?", [email]
+      "SELECT * FROM vendors WHERE email = ?",
+      [email]
     );
+
+    console.log("FOUND VENDOR:", vendors);
+
     if (vendors.length === 0)
       return res.status(400).json({ message: "Vendor not found" });
 
@@ -150,13 +250,48 @@ exports.vendorLogin = async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ message: "Invalid password" });
 
-    const accessToken = signToken(vendor.id, "vendor");
+    if (vendor.status === "inactive") {
+      return res.status(403).json({ message: "Account inactive" });
+    }
+
+    // ✅ NEW: fetch onboarding status
+    const [profile] = await db.query(
+      "SELECT status FROM vendor_profiles WHERE vendor_id = ?",
+      [vendor.id]
+    );
+
+    const onboardingStatus =
+      profile.length > 0 ? profile[0].status : "not_started";
+
+    const tokenPayload = { id: vendor.id, type: "vendor", role: "vendor" };
+
+    const accessToken = jwt.sign(
+      tokenPayload,
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES }
+    );
+
+    const refreshToken = jwt.sign(
+      tokenPayload,
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES }
+    );
+
+    res.cookie("vendorRefreshToken", refreshToken, buildRefreshCookieOptions());
 
     return res.json({
       message: "Vendor login successful",
       accessToken,
-      type: "vendor",
+      user: {
+        id: vendor.id,
+        name: vendor.name,
+        email: vendor.email,
+        type: "vendor",
+      },
+      rememberMe: Boolean(rememberMe),
+      onboardingStatus, // ✅ NEW FIELD
     });
+
   } catch (err) {
     console.error("Vendor Login Error:", err);
     return res.status(500).json({ message: "Server error" });
@@ -166,18 +301,62 @@ exports.vendorLogin = async (req, res) => {
 // ═════════════════════════════════════════════════════════════
 // REFRESH TOKEN
 // ═════════════════════════════════════════════════════════════
-exports.refreshToken = (req, res) => {
-  const token = req.cookies?.refreshToken;
-  if (!token)
+const issueRefreshAccessToken = (req, res, cookieName, expectedType) => {
+  const token = req.cookies?.[cookieName];
+  if (!token) {
     return res.status(401).json({ message: "No refresh token" });
+  }
 
   jwt.verify(token, process.env.JWT_REFRESH_SECRET, (err, user) => {
-    if (err)
+    if (err) {
       return res.status(403).json({ message: "Invalid refresh token" });
+    }
 
-    const newAccessToken = signToken(user.id, user.type);
+    const { id, type, role } = user;
+
+    if (expectedType && type !== expectedType) {
+      return res.status(403).json({ message: "Invalid refresh token type" });
+    }
+
+    const newAccessToken = jwt.sign(
+      { id, type, role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES }
+    );
+
+    const rotatedRefreshToken = jwt.sign(
+      { id, type, role },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES }
+    );
+
+    res.cookie(cookieName, rotatedRefreshToken, buildRefreshCookieOptions());
+
     return res.json({ accessToken: newAccessToken });
   });
+};
+
+exports.refreshToken = (req, res) => issueRefreshAccessToken(req, res, "refreshToken", "user");
+exports.refreshAdminToken = (req, res) => issueRefreshAccessToken(req, res, "adminRefreshToken", "admin");
+exports.refreshVendorToken = (req, res) => issueRefreshAccessToken(req, res, "vendorRefreshToken", "vendor");
+exports.userLogout = (req, res) => {
+  res.clearCookie("refreshToken", {
+    path: "/api/auth",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  });
+
+  return res.json({ message: "User logout successful" });
+};
+
+exports.vendorLogout = (req, res) => {
+  res.clearCookie("vendorRefreshToken", {
+    path: "/api/auth",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  });
+
+  return res.json({ message: "Vendor logout successful" });
 };
 
 // ═════════════════════════════════════════════════════════════
@@ -481,3 +660,4 @@ exports.resetPassword = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+

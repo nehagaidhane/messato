@@ -6,9 +6,10 @@ const EditProfile = () => {
   const navigate = useNavigate();
   const fileRef = useRef();
 
-  const [avatar, setAvatar] = useState(null); // base64 preview
+  const [avatar, setAvatar] = useState(null);
   const [saved, setSaved] = useState(false);
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -23,7 +24,6 @@ const EditProfile = () => {
     bio: "",
   });
 
-  // ── Avatar pick ───────────────────────────────────────
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -32,35 +32,67 @@ const EditProfile = () => {
     reader.readAsDataURL(file);
   };
 
-  // ── Field change ──────────────────────────────────────
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  // ── Validation ────────────────────────────────────────
   const validate = () => {
     const e = {};
     if (!form.firstName.trim()) e.firstName = "First name is required";
     if (!form.lastName.trim())  e.lastName  = "Last name is required";
     if (!form.email.trim())     e.email     = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Invalid email";
-    // eslint-disable-next-line no-useless-escape
-    if (form.phone && !/^\+?[0-9\s\-]{7,15}$/.test(form.phone))
+    if (form.phone && !/^\+?[0-9\s-]{7,15}$/.test(form.phone))
       e.phone = "Invalid phone number";
     return e;
   };
 
-  // ── Save ──────────────────────────────────────────────
-  const handleSave = () => {
-    const e = validate();
-    if (Object.keys(e).length) { setErrors(e); return; }
-    // TODO: call your API here with `form` and `avatar`
-    console.log("Saved:", form, avatar);
+  // ── Single, correct handleSave ────────────────────────
+const handleSave = async () => {
+  const e = validate();
+  if (Object.keys(e).length) { setErrors(e); return; }
+
+  setLoading(true);
+
+  try {
+    // ✅ Match exactly what Login.jsx stores
+    const token = localStorage.getItem("accessToken") 
+               || sessionStorage.getItem("accessToken");
+
+    if (!token) {
+      alert("You are not logged in. Please login again.");
+      navigate("/login");
+      return;
+    }
+
+    const res = await fetch("http://localhost:5000/api/user/update-profile", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ ...form, latitude: null, longitude: null }),
+    });
+
+    const text = await res.text();
+   console.log("STATUS:", res.status);
+console.log("RAW RESPONSE:", text); // ← THIS will show exact backend error
+const data = JSON.parse(text);
+
+    if (!res.ok) throw new Error(data.message || "Something went wrong");
+
     setSaved(true);
     setTimeout(() => { setSaved(false); navigate("/profile"); }, 1500);
-  };
+
+  } catch (err) {
+    console.error("Error:", err);
+    alert(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const initials = `${form.firstName?.[0] || ""}${form.lastName?.[0] || ""}`.toUpperCase() || "U";
 
@@ -68,16 +100,12 @@ const EditProfile = () => {
     <div className="ep-page">
       <div className="ep-container">
 
-        {/* ── Header ── */}
         <div className="ep-header">
-          <button className="ep-back" onClick={() => navigate(-1)} aria-label="Back">
-            ‹
-          </button>
+          <button className="ep-back" onClick={() => navigate(-1)} aria-label="Back">‹</button>
           <h1 className="ep-title">Edit Profile</h1>
           <div style={{ width: 36 }} />
         </div>
 
-        {/* ── Avatar ── */}
         <div className="ep-avatar-wrap">
           <div className="ep-avatar" onClick={() => fileRef.current.click()}>
             {avatar
@@ -98,7 +126,6 @@ const EditProfile = () => {
           />
         </div>
 
-        {/* ── Personal Info ── */}
         <p className="ep-group-label">Personal Info</p>
         <div className="ep-card">
           <div className="ep-row two-col">
@@ -131,12 +158,7 @@ const EditProfile = () => {
           <div className="ep-row two-col">
             <div className="ep-field">
               <label>Date of Birth</label>
-              <input
-                type="date"
-                name="dob"
-                value={form.dob}
-                onChange={handleChange}
-              />
+              <input type="date" name="dob" value={form.dob} onChange={handleChange} />
             </div>
             <div className="ep-field">
               <label>Gender</label>
@@ -164,7 +186,6 @@ const EditProfile = () => {
           </div>
         </div>
 
-        {/* ── Contact ── */}
         <p className="ep-group-label">Contact</p>
         <div className="ep-card">
           <div className="ep-field ep-row">
@@ -196,7 +217,6 @@ const EditProfile = () => {
           </div>
         </div>
 
-        {/* ── Address ── */}
         <p className="ep-group-label">Address</p>
         <div className="ep-card">
           <div className="ep-field ep-row">
@@ -234,12 +254,12 @@ const EditProfile = () => {
           </div>
         </div>
 
-        {/* ── Save button ── */}
         <button
+          disabled={loading}
           className={`ep-save-btn${saved ? " saved" : ""}`}
           onClick={handleSave}
         >
-          {saved ? "✓ Saved!" : "Save Changes"}
+          {loading ? "Saving..." : saved ? "✓ Saved!" : "Save Changes"}
         </button>
 
       </div>

@@ -30,7 +30,7 @@ const Signup = () => {
     try {
       setLoading(true);
       console.log("Sending data:", form);
-      const res = await api.post("/signup-user", form);
+      const res = await api.post("/auth/signup-user", form);
       alert(res.data.message || "Signup successful");
       navigate("/");
     } catch (err) {

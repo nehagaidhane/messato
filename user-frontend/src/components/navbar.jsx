@@ -8,6 +8,7 @@ import { BsCart3, BsCartFill } from "react-icons/bs";
 import { RiUser3Line, RiUser3Fill } from "react-icons/ri";
 import { useCart } from "./usecart";
 import CartDrawer from "./cartDrawer";
+import api from "../api/axios";
 
 /* ─── helpers ─── */
 const getRole = () => {
@@ -53,7 +54,9 @@ const Navbar = () => {
 const UserNavbar = ({ user }) => {
   const navigate      = useNavigate();
   const { pathname }  = useLocation();
-  const token         = localStorage.getItem("token");
+const token =
+  localStorage.getItem("accessToken") ||
+  sessionStorage.getItem("accessToken");
 
   const { cart, cartOpen, setCartOpen } = useCart();
   const cartCount = useMemo(() => cart.reduce((t, i) => t + i.quantity, 0), [cart]);
@@ -194,15 +197,33 @@ fetch(`http://localhost:5000/api/user/reverse-geocode?lat=${coords.latitude}&lng
       { enableHighAccuracy: true, timeout: 8000 }
     );
   };
+const applyLocation = async ({ address, lat, lng }) => {
+  setLocation(address);
 
-  const applyLocation = ({ address, lat, lng }) => {
-    setLocation(address);
-    localStorage.setItem("USER_LOCATION", JSON.stringify({ address, lat, lng }));
-    window.dispatchEvent(new CustomEvent("locationChanged", { detail: { address, lat, lng } }));
-    setShowLocModal(false);
-    setLocSearch("");
-    setSuggestions([]);
-  };
+  // ✅ Save in localStorage
+  localStorage.setItem("USER_LOCATION", JSON.stringify({ address, lat, lng }));
+
+  // ✅ ALSO SAVE IN DATABASE
+  try {
+    await api.post("/user/save-location", {
+      latitude: lat,
+      longitude: lng,
+      address: address,
+      city: "",
+      state: "",
+      zip: "",
+      town: "",
+    });
+  } catch (err) {
+    console.error("Navbar location save failed:", err);
+  }
+
+  window.dispatchEvent(new CustomEvent("locationChanged", { detail: { address, lat, lng } }));
+
+  setShowLocModal(false);
+  setLocSearch("");
+  setSuggestions([]);
+};
 
   const markAllRead = async () => {
     await Promise.all(

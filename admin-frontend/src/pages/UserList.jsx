@@ -1,127 +1,268 @@
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
-import { FaFilter } from "react-icons/fa";
-import { useState } from "react";
-
-const usersData = [
-  { id: "00001", name: "Amogh Ramteke", address: "089 Kutch Green Apt. 448", date: "2019-09-04", contact: "5466552220" },
-  { id: "00002", name: "Roshan Meshram", address: "979 Immanuel Ferry Suite 526", date: "2019-05-28", contact: "5466552220" },
-  { id: "00003", name: "Nikita Singh", address: "8587 Frida Ports", date: "2019-11-23", contact: "5466552220" },
-  { id: "00004", name: "Atharva Rajkondawar", address: "768 Destiny Lake Suite 600", date: "2019-02-05", contact: "5466552220" },
-  { id: "00005", name: "Rajkumar Rao", address: "042 Mylene Throughway", date: "2019-07-29", contact: "5466552220" },
-  { id: "00006", name: "B N Rau", address: "543 Weinmann Mountain", date: "2019-08-15", contact: "5466552220" },
-  { id: "00007", name: "Maggie Curly", address: "New Scottieberg", date: "2019-12-21", contact: "5466552220" },
-  { id: "00008", name: "Nelson Mandela", address: "New Jon", date: "2019-04-30", contact: "5466552220" },
-  { id: "00009", name: "Bella Hadid", address: "124 Lyla Forge Suite 975", date: "2019-01-09", contact: "5466552220" },
-];
+import { fetchWithAuth } from "../utils/api";
+import { useEffect, useState } from "react";
+import {
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
+  ShieldBan,
+  ShieldCheck,
+  Search,
+  Users,
+} from "lucide-react";
 
 export default function UserList() {
+  const [users, setUsers] = useState([]);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [dark] = useState(() => {
+    return localStorage.getItem("theme") === "dark" ||
+      (!localStorage.getItem("theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  });
 
-  // ✅ STATE
-  const [selectedDate, setSelectedDate] = useState("");
+  const USERS_PER_PAGE = 5;
 
-  // ✅ FILTER LOGIC
-  const filteredUsers = selectedDate
-    ? usersData.filter((user) => user.date === selectedDate)
-    : usersData;
+  useEffect(() => {
+    if (dark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [dark]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+const fetchUsers = async () => {
+  setLoading(true);
+  setError(null);
+
+  try {
+    const res = await fetchWithAuth("/admin/users");
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.log("ERROR RESPONSE:", text);
+      throw new Error(`API Error ${res.status}`);
+    }
+
+    const data = await res.json();
+    console.log("DATA:", data);
+
+    setUsers(Array.isArray(data) ? data : []);
+
+  } catch (err) {
+    console.error(err);
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const filteredUsers = users.filter((u) =>
+    u.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const start = (page - 1) * USERS_PER_PAGE;
+  const paginatedUsers = filteredUsers.slice(start, start + USERS_PER_PAGE);
+  const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
+
+const toggleStatus = async (id) => {
+  try {
+    const res = await fetchWithAuth(`/admin/users/${id}/status`, {
+      method: "PUT",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message);
+    }
+
+    // ✅ update UI
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === id ? { ...u, status: data.status } : u
+      )
+    );
+
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+};
 
   return (
-<div className="flex h-screen bg-gray-100 dark:bg-gray-900 overflow-hidden">
-  <Sidebar />
+    <div className="flex bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
+      <Sidebar />
 
-  <div className="flex-1 flex flex-col overflow-hidden">
-    <Header />
+      <div className="flex-1">
+        <Header />
 
-    <div className="p-6 flex-1 overflow-auto text-black dark:text-white">
-      <h1 className="text-2xl font-semibold mb-4">User Lists</h1>
+        <div className="p-6 text-black dark:text-white">
 
-      {/* FILTER BAR */}
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm flex items-center gap-6 mb-6">
+          {/* TITLE ROW + DARK TOGGLE */}
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <Users size={20} className="text-gray-700 dark:text-gray-300" />
+              <h1 className="text-xl font-semibold text-gray-800 dark:text-white tracking-tight">
+                User Lists
+              </h1>
+            </div>
+          </div>
 
-        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-300">
-          <FaFilter />
-          <span>Filter By</span>
-        </div>
+          {/* ERROR MESSAGE */}
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg mb-5">
+              <strong>Error:</strong> {error}
+            </div>
+          )}
 
-        {/* DATE INPUT */}
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          className="border dark:border-gray-600 px-3 py-1 rounded bg-white dark:bg-gray-700 text-black dark:text-white"
-        />
-
-        {/* RESET */}
-        <button
-          onClick={() => setSelectedDate("")}
-          className="text-red-500 font-medium"
-        >
-          Reset Filter
-        </button>
-      </div>
-
-      {/* TABLE */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-blue-500 dark:border-gray-700">
-
-        <table className="w-full text-sm">
-
-          <thead className="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300">
-            <tr>
-              <th className="text-left px-6 py-3">ID</th>
-              <th className="text-left px-6 py-3">NAME</th>
-              <th className="text-left px-6 py-3">ADDRESS</th>
-              <th className="text-left px-6 py-3">DATE</th>
-              <th className="text-left px-6 py-3">Contact</th>
-              <th className="text-left px-6 py-3">STATUS</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filteredUsers.map((user, index) => (
-              <tr
-                key={index}
-                className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                <td className="px-6 py-4">{user.id}</td>
-                <td className="px-6 py-4">{user.name}</td>
-                <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                  {user.address}
-                </td>
-                <td className="px-6 py-4">
-                  {new Date(user.date).toDateString()}
-                </td>
-                <td className="px-6 py-4">{user.contact}</td>
-
-                <td className="px-6 py-4">
-                  <button className="bg-red-100 text-red-500 dark:bg-red-900 dark:text-red-300 px-3 py-1 rounded-full text-xs">
-                    Block User
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-
-        </table>
-
-        {/* FOOTER */}
-        <div className="flex justify-between items-center px-6 py-4 text-sm text-gray-500 dark:text-gray-300 border-t dark:border-gray-700">
-          <span>
-            Showing {filteredUsers.length} of {usersData.length}
-          </span>
-
-          <div className="flex gap-2">
-            <button className="w-8 h-8 border dark:border-gray-600 rounded flex items-center justify-center">
-              {"<"}
-            </button>
-            <button className="w-8 h-8 border dark:border-gray-600 rounded flex items-center justify-center">
-              {">"}
+          {/* FILTER BAR */}
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 flex flex-wrap items-center gap-3 mb-5 shadow-sm">
+            <div className="flex items-center gap-2 text-gray-400 dark:text-gray-500 text-sm font-medium pr-3 border-r border-gray-200 dark:border-gray-700">
+              <SlidersHorizontal size={14} />
+              <span>Filter By</span>
+            </div>
+            <div className="flex items-center gap-2 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-1.5 bg-white dark:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500 transition-colors">
+              <Search size={13} className="text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search user..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                className="bg-transparent outline-none text-gray-700 dark:text-gray-200 text-sm w-48 placeholder:text-gray-400"
+              />
+            </div>
+            <button
+              onClick={fetchUsers}
+              className="ml-auto px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition-colors"
+            >
+              Refresh
             </button>
           </div>
-        </div>
 
+          {/* TABLE */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-gray-700/60 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider border-b border-gray-100 dark:border-gray-700">
+                  <th className="text-left px-6 py-3.5 font-medium">ID</th>
+                  <th className="text-left px-6 py-3.5 font-medium">Name</th>
+                  <th className="text-left px-6 py-3.5 font-medium">Email</th>
+                  <th className="text-left px-6 py-3.5 font-medium">Date</th>
+                  <th className="text-left px-6 py-3.5 font-medium">Status</th>
+                  <th className="text-left px-6 py-3.5 font-medium">Action</th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {loading ? (
+                  <tr>
+                    <td colSpan="6" className="text-center py-16 text-gray-400 dark:text-gray-500">
+                      <span>Loading users...</span>
+                    </td>
+                  </tr>
+                ) : paginatedUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="text-center py-16 text-gray-400 dark:text-gray-500">
+                      <div className="flex flex-col items-center gap-2">
+                        <Users size={28} strokeWidth={1.5} />
+                        <span>No users found</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedUsers.map((user) => (
+                    <tr
+                      key={user.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors"
+                    >
+                      <td className="px-6 py-4 font-mono text-xs text-gray-400 dark:text-gray-500">
+                        {String(user.id).padStart(5, "0")}
+                      </td>
+                      <td className="px-6 py-4 font-medium text-gray-800 dark:text-gray-100">
+                        {user.name}
+                      </td>
+                      <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                        {user.email}
+                      </td>
+                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+                        {new Date(user.created_at).toLocaleDateString("en-GB", {
+                          day: "2-digit", month: "short", year: "numeric",
+                        })}
+                      </td>
+
+                      {/* STATUS */}
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            user.status === "blocked"
+                              ? "bg-red-50 text-red-500 dark:bg-red-900/30 dark:text-red-400"
+                              : "bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+                          }`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                            user.status === "blocked" ? "bg-red-400" : "bg-green-400"
+                          }`} />
+                          {user.status || "active"}
+                        </span>
+                      </td>
+
+                      {/* ACTION */}
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => toggleStatus(user.id)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            user.status === "blocked"
+                              ? "bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/50"
+                              : "bg-red-50 text-red-500 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50"
+                          }`}
+                        >
+                          {user.status === "blocked"
+                            ? <><ShieldCheck size={12} /> Unblock</>
+                            : <><ShieldBan size={12} /> Block</>
+                          }
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+
+            {/* PAGINATION */}
+            <div className="flex justify-between items-center px-6 py-4 border-t border-gray-100 dark:border-gray-700">
+              <span className="text-xs text-gray-400 dark:text-gray-500">
+                Page {page} of {totalPages || 1}
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  disabled={page === 1}
+                  onClick={() => setPage(page - 1)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <ChevronLeft size={15} />
+                </button>
+                <button
+                  disabled={page === totalPages}
+                  onClick={() => setPage(page + 1)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <ChevronRight size={15} />
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
   );
 }

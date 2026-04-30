@@ -555,7 +555,7 @@ export default function LocationSetup({ onComplete }) {
       }));
 
       // ── Save to backend (users table) ──
-      await api.post("/save-location", {
+      await api.post("/user/save-location", {
         latitude:  data.coords.lat,
         longitude: data.coords.lng,
         address:   data.geoInfo?.fullAddress || "",
